@@ -10,12 +10,13 @@ from music_cli.provider import Item
 from music_cli.storage import UserError
 
 
-def test_missing_mpv_has_actionable_error_and_no_temp_directory(monkeypatch):
-    monkeypatch.setattr("music_cli.player.shutil.which", lambda _: None)
+def test_start_creates_in_package_engine_without_external_binary(monkeypatch):
+    factory = Mock()
+    monkeypatch.setattr("music_cli.player.AudioEngine", factory)
     player = Player()
-    with pytest.raises(UserError, match="doctor"):
-        player.start()
-    assert player.temporary is None
+    player.start()
+    player.start()
+    factory.assert_called_once_with(player.events, 70)
 
 
 async def test_resolution_sends_credentials_via_stdin_not_process_arguments(monkeypatch):
@@ -27,11 +28,11 @@ async def test_resolution_sends_credentials_via_stdin_not_process_arguments(monk
     spawn = AsyncMock(return_value=process)
     monkeypatch.setattr("music_cli.player.asyncio.create_subprocess_exec", spawn)
     player = Player({"cookie": "private-cookie"})
-    player.engine = Mock()
+    player.engine = Mock(load=AsyncMock())
     await player.play(Item("abcdefghijk", "test"))
     assert "private-cookie" not in repr(spawn.call_args)
     assert b"private-cookie" in process.communicate.call_args.args[0]
-    player.engine.command.assert_any_call("loadfile", "https://cdn/test", "replace")
+    player.engine.load.assert_awaited_once_with("https://cdn/test")
 
 
 @pytest.mark.skipif(os.name == "nt", reason="POSIX process group")
@@ -69,33 +70,27 @@ async def test_failed_extraction_does_not_play_another_video(monkeypatch):
         "music_cli.player.asyncio.create_subprocess_exec", AsyncMock(return_value=process)
     )
     player = Player()
-    player.engine = Mock()
+    player.engine = Mock(load=AsyncMock())
     with pytest.raises(UserError) as captured:
         await player.play(Item("abcdefghijk", "test"))
     assert "private raw error" not in str(captured.value)
-    assert all(call.args[0] != "loadfile" for call in player.engine.command.call_args_list)
+    player.engine.load.assert_not_awaited()
 
 
 @pytest.mark.skipif(os.name == "nt", reason="POSIX process group")
-async def test_close_reaps_resolver_terminates_engine_and_cleans_temp(monkeypatch):
-    import tempfile
-    from pathlib import Path
-
+async def test_close_reaps_resolver_and_native_engine(monkeypatch):
     player = Player({"cookie": "secret"})
     kill_group = Mock()
     monkeypatch.setattr("music_cli.player.os.killpg", kill_group)
     player.resolver = Mock(returncode=None, pid=123456)
     player.resolver.wait = AsyncMock()
     child = player.resolver
-    player.engine = Mock()
+    player.engine = Mock(close=AsyncMock())
     engine = player.engine
-    player.temporary = tempfile.TemporaryDirectory(prefix="music-cli-test-")
-    directory = Path(player.temporary.name)
     await player.close()
     kill_group.assert_called_once()
     child.wait.assert_awaited_once()
-    engine.terminate.assert_called_once()
-    assert not directory.exists()
+    engine.close.assert_awaited_once()
     assert player.headers is None
 
 
@@ -142,8 +137,8 @@ async def test_timeout_cleans_child_and_does_not_start_playback(monkeypatch):
     monkeypatch.setattr("music_cli.player.asyncio.wait_for", AsyncMock(side_effect=TimeoutError))
     player = Player()
     player._finish_resolver = AsyncMock()
-    player.engine = Mock()
+    player.engine = Mock(load=AsyncMock())
     with pytest.raises(UserError, match="タイムアウト"):
         await player.play(Item("abcdefghijk", "test"))
     player._finish_resolver.assert_awaited_once_with(process)
-    assert all(call.args[0] != "loadfile" for call in player.engine.command.call_args_list)
+    player.engine.load.assert_not_awaited()

@@ -11,6 +11,7 @@ import warnings
 import webbrowser
 from pathlib import Path
 
+from .audio import output_device
 from .provider import YouTubeMusic, login_headers
 from .storage import Store, UserError, validate_account
 
@@ -98,16 +99,26 @@ def choose_account(store: Store, name: str | None) -> None:
     print(f"使用account: {config['account'] or 'guest'}")
 
 
-def doctor(store: Store) -> int:
+def doctor(store: Store, audio_test: bool = False) -> int:
+    import av
+    import miniaudio
+
     print(f"Python: {sys.version.split()[0]}")
     print(f"データ保存先: {store.directory}")
     print("サービス: YouTube Music / 認証保存: 暗号化file / Keychain: 使用しない")
-    found = shutil.which("mpv")
-    print(f"mpv: {found or '未導入（https://mpv.io/installation/）'}")
+    print(f"内蔵decoder: PyAV {av.__version__} / 内蔵音声出力: miniaudio {miniaudio.__version__}")
     runtime = shutil.which("deno") or shutil.which("node")
     print(f"JS runtime: {runtime or '未導入（Deno推奨: https://deno.com/）'}")
+    if audio_test:
+        try:
+            device = output_device()
+            device.close()
+            print("OSの標準音声出力を開けました（音は再生していません）。")
+        except miniaudio.MiniaudioError:
+            print("OSの音声出力を開けません。出力先・デバイスを確認してください。")
+            return 1
     print("実accountの認証・実際の音声出力はこの診断では検証しません。")
-    return 0 if found else 1
+    return 0
 
 
 def parser() -> argparse.ArgumentParser:
@@ -115,7 +126,11 @@ def parser() -> argparse.ArgumentParser:
     root.add_argument("--data-dir", type=Path, help="専用データ保存先")
     root.add_argument("--guest", action="store_true", help="保存accountを使わず起動")
     commands = root.add_subparsers(dest="command")
-    commands.add_parser("doctor", help="依存と保存先を確認")
+    commands.add_parser("doctor", help="依存と保存先を確認").add_argument(
+        "--audio",
+        action="store_true",
+        help="OSの標準音声出力を開けるか確認（無音）",
+    )
     commands.add_parser("service", help="サービスを選択")
     commands.add_parser("login", help="選択したbrowser accountの認証を保存").add_argument("name")
     commands.add_parser("account", help="使用accountを変更").add_argument("name", nargs="?")
@@ -139,7 +154,7 @@ def run(args: argparse.Namespace) -> int:
     store = Store(args.data_dir)
     store.check()
     if args.command == "doctor":
-        return doctor(store)
+        return doctor(store, args.audio)
     if args.command == "login":
         login(store, args.name)
     elif args.command == "account":

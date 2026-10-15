@@ -1,27 +1,18 @@
-"""Bounded extraction and owned mpv process, with no media files on disk."""
+"""Bounded URL extraction and in-package playback, with no media files on disk."""
 
 from __future__ import annotations
 
 import asyncio
 import json
-import logging
 import os
 import queue
-import shutil
 import signal
 import subprocess
 import sys
-import tempfile
-import uuid
 
-import python_mpv_jsonipc as mpv
-
+from .engine import AudioEngine
 from .provider import Item
 from .storage import UserError
-
-mpv.TIMEOUT = 5
-logging.getLogger("mpv-jsonipc").addHandler(logging.NullHandler())
-logging.getLogger("mpv-jsonipc").propagate = False
 
 ERROR_MESSAGES = {
     "login_required": "YouTubeのログイン確認が必要です。music loginで認証を更新してください。",
@@ -36,51 +27,14 @@ class Player:
         self.headers = headers
         self.volume = volume
         self.engine = None
-        self.temporary: tempfile.TemporaryDirectory | None = None
         self.resolver: asyncio.subprocess.Process | None = None
         self.events: queue.SimpleQueue = queue.SimpleQueue()
         self.closed = False
         self._play_lock = asyncio.Lock()
 
     def start(self) -> None:
-        if self.engine is not None:
-            return
-        executable = shutil.which("mpv")
-        if not executable:
-            raise UserError("mpvが見つかりません。music doctorで導入方法を確認してください。")
-        self.temporary = tempfile.TemporaryDirectory(prefix="music-cli-")
-        endpoint = (
-            f"music-cli-{uuid.uuid4().hex}"
-            if os.name == "nt"
-            else os.path.join(self.temporary.name, "mpv.sock")
-        )
-        try:
-            self.engine = mpv.MPV(
-                mpv_location=executable,
-                ipc_socket=endpoint,
-                start_retries=1,
-                diagnose_start_failures=False,
-                discard_output=True,
-                config=False,
-                video=False,
-                audio_display=False,
-                terminal=False,
-                idle=True,
-                ytdl=False,
-                volume=self.volume,
-                cache_on_disk=False,
-                save_position_on_quit=False,
-                input_terminal=False,
-                input_default_bindings=False,
-                demuxer_max_bytes="16MiB",
-                demuxer_max_back_bytes="4MiB",
-            )
-            self.engine.bind_event("end-file", self.events.put)
-        except (mpv.MPVError, OSError, TimeoutError) as error:
-            self.close_engine()
-            raise UserError(
-                "mpvを起動できません。music doctorで実行環境を確認してください。"
-            ) from error
+        if self.engine is None:
+            self.engine = AudioEngine(self.events, self.volume)
 
     async def play(self, item: Item) -> None:
         async with self._play_lock:
@@ -117,12 +71,16 @@ class Player:
                 code = result.get("error", "extract_failed")
                 raise UserError(ERROR_MESSAGES.get(code, ERROR_MESSAGES["extract_failed"]))
             if not self.closed:
-                self.command("set_property", "pause", False)
-                self.command("loadfile", result["url"], "replace")
+                self.start()
+                await self.engine.load(result["url"])
         except TimeoutError as error:
             raise UserError("再生URLの取得がタイムアウトしました。再選択してください。") from error
         except (ValueError, KeyError) as error:
             raise UserError("再生URLの応答が不正です。") from error
+        except OSError as error:
+            raise UserError(
+                "音声再生processを起動できません。music doctorで確認してください。"
+            ) from error
         finally:
             await self._finish_resolver(process)
             if self.resolver is process:
@@ -160,27 +118,18 @@ class Player:
 
     def command(self, name: str, *args):
         if self.engine is not None:
-            try:
-                return self.engine.command(name, *args)
-            except (mpv.MPVError, OSError, TimeoutError) as error:
-                raise UserError(
-                    "再生エンジンとの通信に失敗しました。再起動してください。"
-                ) from error
+            return self.engine.command(name, *args)
 
-    def close_engine(self) -> None:
-        try:
-            if self.engine is not None:
-                self.engine.terminate()
-        finally:
-            self.engine = None
-            if self.temporary is not None:
-                self.temporary.cleanup()
-                self.temporary = None
+    def poll(self) -> None:
+        if self.engine is not None:
+            self.engine.pump()
 
     async def close(self) -> None:
         self.closed = True
         if self.resolver is not None:
             await self._finish_resolver(self.resolver)
             self.resolver = None
-        self.close_engine()
+        if self.engine is not None:
+            await self.engine.close()
+            self.engine = None
         self.headers = None

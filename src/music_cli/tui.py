@@ -210,6 +210,7 @@ class MusicApp(App):
     def poll_player(self) -> None:
         if self.stopping:
             return
+        self.player.poll()
         while True:
             try:
                 event = self.player.events.get_nowait()
@@ -229,7 +230,9 @@ class MusicApp(App):
                 self.upcoming.clear()
                 self.current = None
                 self.now()
-                self.status("音声の再生に失敗しました。接続を確認して曲を再選択してください。")
+                self.status(
+                    event.get("message") or "音声の再生に失敗しました。曲を再選択してください。"
+                )
 
     async def on_unmount(self) -> None:
         self.stopping = True

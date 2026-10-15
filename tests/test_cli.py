@@ -2,7 +2,7 @@ from unittest.mock import Mock
 
 import pytest
 
-from music_cli.cli import choose_account, login, parser, run, secret
+from music_cli.cli import choose_account, doctor, login, parser, run, secret
 from music_cli.storage import DEFAULT_CONFIG, Store, UserError
 
 
@@ -60,3 +60,28 @@ def test_secret_rejects_piped_input_without_echoing(monkeypatch):
     monkeypatch.setattr("music_cli.cli.sys.stdin.isatty", lambda: False)
     with pytest.raises(UserError, match="対話terminal"):
         secret("test")
+
+
+def test_doctor_does_not_require_mpv_or_open_the_audio_device(tmp_path, monkeypatch, capsys):
+    monkeypatch.setattr("music_cli.cli.shutil.which", lambda _: None)
+    device = Mock()
+    monkeypatch.setattr("music_cli.cli.output_device", device)
+    store = Store(tmp_path / "unused")
+    assert doctor(store) == 0
+    device.assert_not_called()
+    assert "PyAV" in capsys.readouterr().out
+    assert not store.directory.exists()
+
+
+def test_explicit_audio_diagnostic_handles_device_failure(tmp_path, monkeypatch, capsys):
+    import miniaudio
+
+    monkeypatch.setattr(
+        "music_cli.cli.output_device",
+        Mock(
+            side_effect=miniaudio.MiniaudioError("raw platform detail"),
+        ),
+    )
+    assert doctor(Store(tmp_path / "unused"), audio_test=True) == 1
+    output = capsys.readouterr().out
+    assert "raw platform detail" not in output and "開けません" in output

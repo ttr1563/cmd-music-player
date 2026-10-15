@@ -56,6 +56,7 @@ def test_resolver_cookies_stay_in_memory_and_not_in_cdn_output(monkeypatch):
     assert "Cookie" not in result and "private-cookie" not in str(result)
     assert engine.cookiejar.set_cookie.call_args.args[0].value == "private-cookie"
     assert "authuser=2" in engine.extract_info.call_args.args[0]
+    assert engine.extract_info.call_args.args[0].startswith("https://music.youtube.com/watch?")
 
 
 def test_invalid_id_rejected_before_extractor(monkeypatch):

@@ -95,7 +95,7 @@ def resolve(payload: dict) -> dict:
             )
         authuser = int(headers.get("x-goog-authuser", "0"))
         info = ydl.extract_info(
-            f"https://www.youtube.com/watch?v={video_id}&authuser={authuser}",
+            f"https://music.youtube.com/watch?v={video_id}&authuser={authuser}",
             download=False,
         )
         url = info.get("url", "")

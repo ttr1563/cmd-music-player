@@ -12,14 +12,15 @@ Homebrew導入済みのMacのターミナルで実行してください。
 Homebrewがなければ[公式サイト](https://brew.sh/)の手順で先に導入します。
 
 ```console
-brew install uv mpv deno
-uv tool install --python 3.12 'https://github.com/ttr1563/cmd-music-player/archive/refs/heads/feature/youtube-music-cli.zip'
+brew install uv deno
+uv tool install --python 3.12 --no-build-package av --no-build-package miniaudio 'https://github.com/ttr1563/cmd-music-player/archive/refs/heads/feature/youtube-music-cli.zip'
 uv tool update-shell
 ```
 
 `uv tool update-shell`の案内に従ってターミナルを開き直し、起動します。
 PythonとCLIの依存packageはuvが専用環境へ導入するため、Pythonの個別セットアップは不要です。
-uv・mpv・Denoの導入は初回だけで、以降は`music`だけで起動できます。
+uv・Denoの導入は初回だけで、以降は`music`だけで起動できます。
+音声再生機能を内蔵しているため、mpvやFFmpegの個別インストールは不要です。
 
 ```console
 music doctor
@@ -33,14 +34,14 @@ Google passwordやCookieをGitHub issue・chatへ送らないでください。
 
 ### Linux / Windows・ローカルソース・wheelから導入する
 
-必要: Python 3.11以上、mpvをPATHに配置、インターネット接続。
+必要: Python 3.12以上、OSの音声出力環境、インターネット接続。
 パッケージはまだ公開していません。このソースを取得したPCのターミナルから実行します。
 共有サーバー側にインストールしても手元PCから音は出ません。聴くPCにインストールしてください。
 
 uvがある場合（Python未導入ならuvが対応runtimeを取得）:
 
 ```console
-uv tool install --python 3.12 /path/to/music-cli
+uv tool install --python 3.12 --no-build-package av --no-build-package miniaudio /path/to/music-cli
 music doctor
 music
 ```
@@ -48,7 +49,7 @@ music
 pipxがある場合:
 
 ```console
-pipx install /path/to/music-cli
+pipx install --python python3.12 --pip-args='--only-binary=av,miniaudio' /path/to/music-cli
 music doctor
 music
 ```
@@ -56,18 +57,22 @@ music
 配布用wheelを受け取った場合は、ソースdirectoryの代わりにそのfileを指定できます。
 
 ```console
-uv tool install --python 3.12 /path/to/music_cli_local-0.1.0-py3-none-any.whl
+uv tool install --python 3.12 --no-build-package av --no-build-package miniaudio /path/to/music_cli_local-0.2.0-py3-none-any.whl
 ```
 
-macOSでHomebrewがある場合、再生エンジンは次のように導入できます。
+PyAV（音声decode）とminiaudio（OSへの出力）のbinary wheelがCLIと一緒に導入されます。
+音声エンジンのsource compileを避けるため、上記コマンドでnative packageのbuildを禁止しています。
 
-```console
-brew install mpv
-```
+| OS / CPU | CPython 3.12で利用するbinary wheelの条件 |
+| --- | --- |
+| macOS / Apple Silicon | macOS 14以上 |
+| macOS / Intel | macOS 11以上 |
+| Windows / x64 | wheelあり、OSの音声出力環境が必要 |
+| Linux / x64 | glibc 2.28以上、PulseAudioまたはALSAが必要 |
+| Windows・Linux / ARM64 | miniaudioの該当wheelがないため今回の導入確認対象外 |
 
-Linuxはdistributionのpackage manager、Windowsはmpv公式の配布案内から導入してください。
-このtoolは管理者権限の取得やOS packageの自動導入を行いません。
-https://mpv.io/installation/
+表は配布条件であり、各OS実機での動作確認結果ではありません。headless serverへ導入しても
+手元PCから音は出ません。音声出力が開けるかは`music doctor --audio`で無音の確認ができます。
 
 yt-dlpとそのPython依存はこのpackageと一緒に入ります。YouTubeのJS challenge解決用に
 JS runtimeが必要な場合があり、推奨のDenoがなければdoctorが案内します。
@@ -78,7 +83,7 @@ https://github.com/yt-dlp/yt-dlp/wiki/EJS
 初回の`music`でYouTube Musicを確認し、guest / loginを選べます。
 guestは検索と公開曲の再生を試せます。YouTubeからログイン確認を要求された場合は認証が必要です。
 login後は自分のライブラリ/playlistも利用できます。
-設定は次回から再利用します。mpv不足は`music doctor`で確認できます。
+設定は次回から再利用します。内蔵エンジンとJS runtimeは`music doctor`で確認できます。
 
 ```console
 music
@@ -157,7 +162,7 @@ pipxで入れた場合は最後を`pipx uninstall music-cli-local`に置き換�
 purgeは確認後に既知の保存fileだけを削除します。未知のfileや他のdirectoryは削除しません。
 通常のpackage uninstallだけではuser dataは消えません。必ず先にpurgeしてください。
 手動で指定した別data-dir、利用者が作ったbackup、browser/clipboardのデータは別途管理してください。
-mpvやuv/pipxなど他用途でも使うpackageは自動削除しません。
+uv/pipxやDenoなど他用途でも使うpackageは自動削除しません。
 設定書込み中だけ`.write-lock` directoryを作ります。異常終了で残った場合は、
 すべてのmusicを終了し、その空directoryだけを取り除いてから再実行してください。
 
@@ -167,7 +172,7 @@ mpvやuv/pipxなど他用途でも使うpackageは自動削除しません。
 認証情報と設定はそのまま残ります。
 
 ```console
-uv tool install --force --reinstall --refresh --python 3.12 'https://github.com/ttr1563/cmd-music-player/archive/refs/heads/feature/youtube-music-cli.zip'
+uv tool install --force --reinstall --refresh --python 3.12 --no-build-package av --no-build-package miniaudio 'https://github.com/ttr1563/cmd-music-player/archive/refs/heads/feature/youtube-music-cli.zip'
 music doctor
 ```
 
