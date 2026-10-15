@@ -63,7 +63,7 @@ def test_secret_rejects_piped_input_without_echoing(monkeypatch):
 
 
 def test_doctor_does_not_require_mpv_or_open_the_audio_device(tmp_path, monkeypatch, capsys):
-    monkeypatch.setattr("music_cli.cli.shutil.which", lambda _: None)
+    monkeypatch.setattr("music_cli.runtime.shutil.which", lambda _: None)
     device = Mock()
     monkeypatch.setattr("music_cli.cli.output_device", device)
     store = Store(tmp_path / "unused")

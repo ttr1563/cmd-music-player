@@ -8,10 +8,10 @@ import os
 import queue
 import signal
 import subprocess
-import sys
 
 from .engine import AudioEngine
 from .provider import Item
+from .runtime import resolver_command
 from .storage import UserError
 
 ERROR_MESSAGES = {
@@ -46,9 +46,7 @@ class Player:
         self.command("stop")
         try:
             process = await asyncio.create_subprocess_exec(
-                sys.executable,
-                "-m",
-                "music_cli.resolver",
+                *resolver_command(),
                 stdin=asyncio.subprocess.PIPE,
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.DEVNULL,

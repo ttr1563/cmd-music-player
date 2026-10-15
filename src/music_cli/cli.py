@@ -5,7 +5,6 @@ from __future__ import annotations
 import argparse
 import getpass
 import json
-import shutil
 import sys
 import warnings
 import webbrowser
@@ -13,6 +12,7 @@ from pathlib import Path
 
 from .audio import output_device
 from .provider import YouTubeMusic, login_headers
+from .runtime import runtime_description
 from .storage import Store, UserError, validate_account
 
 
@@ -107,8 +107,7 @@ def doctor(store: Store, audio_test: bool = False) -> int:
     print(f"データ保存先: {store.directory}")
     print("サービス: YouTube Music / 認証保存: 暗号化file / Keychain: 使用しない")
     print(f"内蔵decoder: PyAV {av.__version__} / 内蔵音声出力: miniaudio {miniaudio.__version__}")
-    runtime = shutil.which("deno") or shutil.which("node")
-    print(f"JS runtime: {runtime or '未導入（Deno推奨: https://deno.com/）'}")
+    print(f"JS runtime: {runtime_description()}")
     if audio_test:
         try:
             device = output_device()

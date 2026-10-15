@@ -6,6 +6,45 @@ macOS / Linux / Windowsを設計対象とし、Keychainは使いません。
 
 ## インストール
 
+### バイナリ版（uv・Python・Denoの個別導入不要）
+
+Python・再生library・Denoを含むdirectory一式を配布する構成です。
+公開Releaseへの添付はまだ行っていません。Mac/Windows版の生成・実機検証は未完了です。
+配布物を受け取った場合は展開後のterminalで実行します。
+
+```console
+./music/music doctor
+./music/music
+```
+
+Windowsでは`music\music.exe`を実行します。POSIX版はsymlinkを保持するtar.gzです。
+`music`実行fileだけを移動せず、`_internal`を含むdirectory全体を保持してください。
+PATHに配布directoryを追加すると、以降は`music`で起動できます。
+更新はアプリ終了後にdirectory一式を差し替えます。問題があれば前版一式へ戻します。
+認証/設定の保存形式は共通で、Keychainは使いません。
+削除時は`music purge --yes`で専用dataを消してから配布directoryを削除してください。
+
+#### 開発者用ビルド
+
+次の手順は配布物を作る人だけに必要です。聴くPCと同じOS/architecture上で実行します。
+Python 3.12とuvを使い、native依存はwheelのみ導入します。
+
+```console
+uv sync --locked --group binary --python 3.12 --no-build-package av --no-build-package miniaudio
+uv run --locked --group binary python scripts/build_binary.py
+uv run --locked --group binary python tests/binary_smoke.py dist/binary-linux-x86_64/music/music
+```
+
+`dist/music-0.2.0-<OS>-<architecture>.tar.gz`（Windowsはzip）とSHA256を生成します。
+Denoはversionとarchive SHA256を固定して公式配布元から取得し、同梱します。
+macOS ARM64（14以上）/Intel、Windows x64、Linux x64がbuild対象です。
+Linuxはbuild hostのglibc以上が必要です。別OS向けのcross compileは行いません。
+再build時は既存の`dist/binary-<OS>-<architecture>`を別名で保持してから実行します。
+同梱license/noticeは保持し、公開前に対象OSのnative libraryのlicense/source要件を確認します。
+smokeの対象pathは生成したOS/architectureに合わせ、Windowsでは末尾を`music.exe`にします。
+smokeはネット接続・実account・実音声出力を使いません。
+Mac版の署名/notarizationは未設定です。GitHub Actionsや有料runnerは追加しません。
+
 ### macOSでGitHubから導入する
 
 Homebrew導入済みのMacのターミナルで実行してください。

@@ -12,6 +12,7 @@ from yt_dlp import YoutubeDL
 from yt_dlp.extractor.youtube import YoutubeIE as BaseYoutubeIE
 
 from .provider import VIDEO_ID
+from .runtime import js_runtimes
 
 
 def error_code(error: Exception) -> str:
@@ -64,7 +65,7 @@ def resolve(payload: dict) -> dict:
             "socket_timeout": 15,
             "retries": 0,
             "extractor_retries": 0,
-            "js_runtimes": {"deno": {}, "node": {}},
+            "js_runtimes": js_runtimes(),
         }
     ) as ydl:
         if headers:

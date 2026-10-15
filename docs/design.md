@@ -74,12 +74,24 @@ Intelは11以上。Windows x64/Linux x64はwheel条件をREADMEへ記載。
 Windows/Linux ARM64はminiaudio wheelがなく今回の保証外。対応はwheel供給または専用build/検証環境の
 整備後に追加し、利用者PCでnative compileを暗黙に開始しないようinstall commandにno-build-packageを付ける。
 PyAVのFFmpeg依存とminiaudioは依存packageの配布物として取得し、外部mpvを探す経路は削除する。
-依存packageのlicense/noticeは各wheel内に保持され、独自binaryへの再bundleは今回行わない。
+source/wheel導入に加え、PyInstaller onedirのstandalone配布を用意する。
+Python、native library、EJS、version/SHA256固定のDenoを同梱し、利用者側のuv/Python/Denoを不要にする。
+runtime moduleが同梱Denoの絶対pathを返し、resolverは同じ実行fileの専用modeで起動する。
+entrypointのfreeze_supportでaudio worker/resource trackerをCLI起動前に振り分ける。
+単一fileへの毎回展開を避けるためdirectory一式を配布し、POSIX tar.gzでsymlinkを保持する。
+buildは対象OS/architecture上で行い、Mac/Windows環境がない段階では生成・実機検証を完了扱いにしない。
+dependency metadata/license、Python/Denoのlicense、固定lockを同梱する。
+公開binary release前にFFmpeg等の実際のnative依存のlicense/source/relinking要件を別途確認する。
+署名/notarization・自動update・hosted buildは今回未実装。前二者はOS別の署名環境と配布経路、
+hosted buildはowner全体の費用確認が整ってから導入する。今回は自動実行workflowを追加しない。
 
 保存設定/vault v1は移行不要。0.1.0からの更新はREADMEのforce/reinstall/refresh手順を使用。
 rollbackは`dcad5ff56833375edc7f4a583b803a35f3aa3b0c`のarchiveを再installし、旧版に必要なmpvを用意する。
 old/new同時起動と、起動中のupdate/purgeは行わない。旧依存をtool側からOS全体へuninstallしない。
 doctorはlibraryとJS runtimeの確認、doctor --audioはdeviceを開けるか無音の確認を提供する。
+standalone更新/rollbackは全process終了後にdirectory一式を差し替える。保存schemaは同一で移行不要。
+build失敗時の部分生成物を成功扱いにせず、既存出力の自動上書きも拒否する。
+配布archiveのSHA256と、PATHを空にしたdoctor/config/purge/resolver/Deno、frozen worker起動を検証する。
 
 ## 今回実装しないものと拡張境界
 
