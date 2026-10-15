@@ -82,8 +82,12 @@ entrypointのfreeze_supportでaudio worker/resource trackerをCLI起動前に振
 buildは対象OS/architecture上で行い、Mac/Windows環境がない段階では生成・実機検証を完了扱いにしない。
 dependency metadata/license、Python/Denoのlicense、固定lockを同梱する。
 公開binary release前にFFmpeg等の実際のnative依存のlicense/source/relinking要件を別途確認する。
-署名/notarization・自動update・hosted buildは今回未実装。前二者はOS別の署名環境と配布経路、
-hosted buildはowner全体の費用確認が整ってから導入する。今回は自動実行workflowを追加しない。
+署名/notarization・自動updateは未実装。OS別の署名環境と配布経路が必要。
+Mac hosted buildは通常push/PR作成では走らないlabel起動のみとし、owner全体の費用確認後に開始する。
+標準Mac runnerを2architecture直列で使い、対象commit一致かつdraftであるReleaseにのみ添付する。
+従量のActions artifact/cache storage、有料large runner、公開操作、tag作成は行わない。
+install.shはMac archiveのSHA256/architecture/形式を確認してuser領域へ展開し、専用bundleを保持する。
+既存の他commandは上書きせず、旧bundleを残してrollback可能にする。
 
 保存設定/vault v1は移行不要。0.1.0からの更新はREADMEのforce/reinstall/refresh手順を使用。
 rollbackは`dcad5ff56833375edc7f4a583b803a35f3aa3b0c`のarchiveを再installし、旧版に必要なmpvを用意する。

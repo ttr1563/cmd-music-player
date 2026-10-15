@@ -12,6 +12,22 @@ Python・再生library・Denoを含むdirectory一式を配布する構成です
 公開Releaseへの添付はまだ行っていません。Mac/Windows版の生成・実機検証は未完了です。
 配布物を受け取った場合は展開後のterminalで実行します。
 
+Macではarchiveと同名の`.sha256`、`scripts/install.sh`を取得し、次のように導入できます。
+これは導入用shellで、実際の再生処理は同梱のMac binaryで動きます。
+Apple Siliconの例（Intelではfilenameの`arm64`を`x86_64`に変更）:
+
+```console
+sh install.sh "$HOME/Downloads/music-0.2.0-darwin-arm64.tar.gz"
+export PATH="$HOME/.local/bin:$PATH"
+music doctor
+music
+```
+
+installerはSHA256とOS/architectureを確認し、`~/.local/share/music-cli/bundles`に一式を配置します。
+`~/.local/bin/music`から起動でき、uv・Python・Denoは不要です。同名の他commandは上書きしません。
+旧bundleはrollback用に保持します。設定/vaultは従来の専用data directoryで管理します。
+まだMac archiveが生成されていないため、このinstall手順は配布物生成後に利用します。
+
 ```console
 ./music/music doctor
 ./music/music
@@ -43,7 +59,12 @@ Linuxはbuild hostのglibc以上が必要です。別OS向けのcross compileは
 同梱license/noticeは保持し、公開前に対象OSのnative libraryのlicense/source要件を確認します。
 smokeの対象pathは生成したOS/architectureに合わせ、Windowsでは末尾を`music.exe`にします。
 smokeはネット接続・実account・実音声出力を使いません。
-Mac版の署名/notarizationは未設定です。GitHub Actionsや有料runnerは追加しません。
+Mac版の署名/notarizationは未設定です。
+Macでmaintainerがbuildする場合は`sh scripts/build-macos.sh`で依存の準備・test・binary生成・smokeを実行できます。
+GitHub版はPRへ`build-macos-preview` labelを明示追加した時だけ起動するworkflowを用意しています。
+通常push/PR作成ではbuildせず、外部実行の確認が済むまでlabelを追加しません。
+標準の`macos-15`/`macos-15-intel`を直列で使い、成果物は対象commitの既存draft Releaseだけに添付します。
+Actions artifact/cache storageや有料large runnerは使わず、自動公開/tag作成もしません。
 
 ### macOSでGitHubから導入する
 
