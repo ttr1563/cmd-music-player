@@ -1,7 +1,11 @@
 # 保守PRの作成
 
 `develop`から`feature/maintenance-概要`を分岐し、必要な修正とテストをlocalで完了してからpushします。
-commit本文に「変更理由」「影響範囲」「テスト結果」を残してください。
+commit件名をPRのタイトル、本文をPRの説明として使います。
+[共通テンプレート](../.github/PULL_REQUEST_TEMPLATE.md)に沿って、変更理由・影響範囲・確認済みのテスト結果を
+短い「です・ます調」で記載してください。分岐元・マージ先は「影響範囲」に記載します。
+見出しや順序が異なる場合はPRを作成せず、Actionsにエラーを表示します。
+作業ログやcommit情報の自動追記は行いません。
 
 所有者`ttr1563`がこのrepositoryへpushすると、Actionsが`github-actions[bot]`名義で
 `develop`向けPRを作り、`ttr1563`へレビューを依頼します。本人がApproveして手動mergeします。

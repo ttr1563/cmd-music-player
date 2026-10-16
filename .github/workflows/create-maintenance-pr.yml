@@ -61,14 +61,17 @@ jobs:
           fi
           message=$(gh api "repos/$GH_REPO/commits/$HEAD_SHA" --jq .commit.message)
           subject=${message%%$'\n'*}
+          description=${message#*$'\n'}
+          description=${description#$'\n'}
+          template=$(gh api "repos/$GH_REPO/contents/.github/PULL_REQUEST_TEMPLATE.md?ref=$HEAD_SHA" \
+            --jq .content | base64 --decode)
+          headings() { sed -n '/^## /p; /^### /p'; }
+          expected=$(headings <<< "$template")
+          if [ -z "$expected" ] || [ "$(headings <<< "$description")" != "$expected" ]; then
+            echo 'Commit body must follow .github/PULL_REQUEST_TEMPLATE.md.' >&2
+            exit 1
+          fi
           body="$RUNNER_TEMP/maintenance-pr.md"
-          {
-            printf '分岐元・merge先: `%s`\n\n' "$BASE"
-            printf '変更理由・影響範囲・テスト結果は、以下のpush前のcommit記録を参照してください。\n'
-            printf 'このActionsはPR作成のみで、コード・依存・テストは実行していません。\n\n'
-            printf '対象commit: `%s`\n\n' "$HEAD_SHA"
-            printf '%s\n\n' "$message"
-            printf '人によるApproveと手動mergeが必要です。自動承認・自動mergeは行いません。\n'
-          } > "$body"
+          printf '%s\n' "$description" > "$body"
           gh pr create --repo "$GH_REPO" --base "$BASE" --head "$BRANCH" \
             --title "[$BRANCH] $subject" --body-file "$body" --reviewer "$REVIEWER"
