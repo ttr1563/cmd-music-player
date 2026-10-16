@@ -29,12 +29,21 @@ const sourceURL = "https://ffmpeg.org/releases/ffmpeg-9.0.2.tar.xz"
 const sourceSHA = "8c3850283eb25fa026482078a04051e0be17347b09ef81a0849bec15a96e002e"
 
 func run(ctx context.Context, dir string, env []string, name string, args ...string) error {
+	started := time.Now()
+	fmt.Printf("build tool: %s\n", filepath.Base(name))
 	c := exec.CommandContext(ctx, name, args...)
 	c.Dir = dir
 	c.Env = env
 	c.Stdout = os.Stdout
 	c.Stderr = os.Stderr
-	return c.Run()
+	if err := c.Run(); err != nil {
+		if ctx.Err() != nil {
+			err = ctx.Err()
+		}
+		return fmt.Errorf("%s after %s: %w", filepath.Base(name), time.Since(started).Round(time.Second), err)
+	}
+	fmt.Printf("build tool completed: %s (%s)\n", filepath.Base(name), time.Since(started).Round(time.Second))
+	return nil
 }
 func copyFile(from, to string) error {
 	in, err := os.Open(from)
@@ -218,7 +227,10 @@ func build() error {
 	if hex.EncodeToString(h.Sum(nil)) != sourceSHA {
 		return errors.New("FFmpeg source checksum mismatch")
 	}
-	if err = run(ctx, temporary, os.Environ(), archiveTool, "-xf", sourceArchive); err != nil {
+	extractCtx, cancelExtract := context.WithTimeout(ctx, 90*time.Second)
+	err = run(extractCtx, temporary, os.Environ(), archiveTool, "-xf", sourceArchive)
+	cancelExtract()
+	if err != nil {
 		return err
 	}
 	tree := filepath.Join(temporary, "ffmpeg-9.0.2")
@@ -241,7 +253,19 @@ func build() error {
 		makeTool = "C:/msys64/usr/bin/make.exe"
 		flags = append(flags, "--toolchain=msvc", "--arch=x86_64")
 	}
-	if err = run(ctx, tree, env, shell, append([]string{filepath.ToSlash(filepath.Join(tree, "configure"))}, flags...)...); err != nil {
+	configureCtx, cancelConfigure := context.WithTimeout(ctx, 3*time.Minute)
+	err = run(configureCtx, tree, env, shell, append([]string{filepath.ToSlash(filepath.Join(tree, "configure"))}, flags...)...)
+	cancelConfigure()
+	if err != nil {
+		log, _ := os.ReadFile(filepath.Join(tree, "ffbuild", "config.log"))
+		// configure starts by dumping its environment; only show compiler probes.
+		if start := bytes.Index(log, []byte("\nBEGIN ")); start >= 0 {
+			log = log[start:]
+			if len(log) > 8192 {
+				log = log[len(log)-8192:]
+			}
+			os.Stderr.Write(log)
+		}
 		return err
 	}
 	config, err := os.ReadFile(filepath.Join(tree, "config.h"))
