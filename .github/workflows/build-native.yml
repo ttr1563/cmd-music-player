@@ -52,7 +52,11 @@ jobs:
       - name: Prepare Windows compiler
         if: runner.os == 'Windows'
         shell: pwsh
+        env:
+          GH_TOKEN: ''
         run: |
+          & C:/msys64/usr/bin/pacman.exe -S --needed --noconfirm make
+          if ($LASTEXITCODE -ne 0) { throw 'MSYS2 make installation failed' }
           $vswhere = "${env:ProgramFiles(x86)}/Microsoft Visual Studio/Installer/vswhere.exe"
           $vs = & $vswhere -latest -products '*' -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
           $devcmd = "$vs/Common7/Tools/VsDevCmd.bat"

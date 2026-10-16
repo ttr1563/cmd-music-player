@@ -11,6 +11,7 @@ CGO_ENABLED=0 go build -trimpath -o fest ./cmd/fest
 
 再生には同梱decoderも必要です。完全な配布フォルダを作る場合は、対象OS上で次を実行します。
 Cコンパイラ、make、tarが必要です。Linuxではpatchelf、WindowsではVisual Studio C++とMSYS2を使用します。
+MSYS2では`pacman -S make`でmakeを導入します。
 
 ```console
 go run ./cmd/fest-build
