@@ -22,7 +22,7 @@ def start_frozen_worker(worker, internal):
         sys.path = [
             str(internal),
             str(internal / "base_library.zip"),
-            str(internal / "lib-dynload"),
+            str(internal / f"python{sys.version_info.major}.{sys.version_info.minor}" / "lib-dynload"),
         ]
         del main_module.__file__
         worker.start()
