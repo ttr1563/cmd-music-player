@@ -2,8 +2,10 @@
 
 ターミナルでYouTube Musicを検索・選曲して、音声を再生する非公式プレイヤーです。
 
-**試用版です。Macの実機動作は未確認で、Mac版バイナリは準備中です。**
-[ソースから試す手順](docs/source-install.md)を用意しています。以下はバイナリ配布開始後の手順です。
+**試用版です。Macの実機動作は未確認で、Mac版バイナリは準備中。**
+[ソースから試す手順](docs/source-install.md)を用意しています。
+
+以下はバイナリ配布開始後の手順です。
 
 ## インストール（Mac）
 
@@ -16,7 +18,8 @@
 | Intel | `music-0.2.0-darwin-x86_64.tar.gz` |
 
 3つのファイルをダウンロードフォルダに置き、ターミナルで実行します。
-Apple Siliconの例です。Intelの場合はファイル名の`arm64`を`x86_64`に変更してください。
+
+Intelの場合: ファイル名の`arm64`を`x86_64`に変更してください。
 
 ```console
 sh "$HOME/Downloads/install.sh" "$HOME/Downloads/music-0.2.0-darwin-arm64.tar.gz"
