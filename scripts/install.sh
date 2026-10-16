@@ -3,9 +3,9 @@
 set -eu
 umask 077
 
-fail() { echo "music install: $*" >&2; exit 1; }
+fail() { echo "fest install: $*" >&2; exit 1; }
 [ "$(uname -s)" = Darwin ] || fail 'Mac用のinstallerです。'
-[ "$#" -eq 1 ] || fail '使い方: sh install.sh /path/to/music-0.2.0-darwin-arm64.tar.gz'
+[ "$#" -eq 1 ] || fail '使い方: sh install.sh /path/to/fest-0.3.0-darwin-arm64.tar.gz'
 case "$(uname -m)" in
     arm64) target=darwin-arm64 ;;
     x86_64) target=darwin-x86_64 ;;
@@ -14,7 +14,7 @@ esac
 archive_dir=$(CDPATH= cd -- "$(dirname -- "$1")" && pwd)
 archive="$archive_dir/$(basename -- "$1")"
 case "$archive" in
-    *-"$target".tar.gz) ;;
+    */fest-*-"$target".tar.gz) ;;
     *) fail "このMacには$target用のarchiveが必要です。" ;;
 esac
 [ -f "$archive" ] && [ -f "$archive.sha256" ] || fail 'archiveと.sha256を同じ場所に置いてください。'
@@ -31,10 +31,10 @@ bin_dir="$install_prefix/bin"
 if [ -e "$install_root" ]; then
     [ -f "$install_root/.music-cli-install" ] || fail '保存先はこのinstallerの管理領域ではありません。'
 fi
-if [ -e "$bin_dir/music" ] || [ -L "$bin_dir/music" ]; then
-    [ -L "$bin_dir/music" ] || fail '同名の別コマンドが存在します。'
-    case "$(readlink "$bin_dir/music")" in
-        "$install_root"/bundles/*/music) ;;
+if [ -e "$bin_dir/fest" ] || [ -L "$bin_dir/fest" ]; then
+    [ -L "$bin_dir/fest" ] || fail '同名の別コマンドが存在します。'
+    case "$(readlink "$bin_dir/fest")" in
+        "$install_root"/bundles/*/fest) ;;
         *) fail '同名の別コマンドが存在します。' ;;
     esac
 fi
@@ -42,21 +42,27 @@ staging=$(mktemp -d "${TMPDIR:-/tmp}/music-install.XXXXXX")
 link_tmp="$bin_dir/.music-install-$$"
 trap 'rm -rf -- "$staging"; rm -f -- "$link_tmp"' EXIT HUP INT TERM
 tar -tzf "$archive" > "$staging/entries"
-awk '/^\// || /(^|\/)\.\.(\/|$)/ || $0 !~ /^music(\/|$)/ {bad=1} END {exit bad}' "$staging/entries" || fail 'archiveのpathが不正です。'
+awk '/^\// || /(^|\/)\.\.(\/|$)/ || $0 !~ /^fest(\/|$)/ {bad=1} END {exit bad}' "$staging/entries" || fail 'archiveのpathが不正です。'
 tar -xzf "$archive" -C "$staging"
-[ -x "$staging/music/music" ] && [ -d "$staging/music/_internal" ] || fail '配布fileが不足しています。'
-case "$target:$(file -b "$staging/music/music")" in
+[ -x "$staging/fest/fest" ] && [ -d "$staging/fest/_internal" ] || fail '配布fileが不足しています。'
+case "$target:$(file -b "$staging/fest/fest")" in
     darwin-arm64:*Mach-O*arm64*|darwin-x86_64:*Mach-O*x86_64*) ;;
     *) fail 'このMac用の実行fileではありません。' ;;
 esac
-"$staging/music/music" --help > /dev/null
+"$staging/fest/fest" --help > /dev/null
 mkdir -p "$install_root/bundles" "$bin_dir"
 touch "$install_root/.music-cli-install"
 bundle="$install_root/bundles/$actual"
 [ ! -e "$bundle" ] || fail '同じ配布物がinstall済みです。'
-mv "$staging/music" "$bundle"
-ln -s "$bundle/music" "$link_tmp"
-mv -f "$link_tmp" "$bin_dir/music"
-echo "installしました: $bin_dir/music"
+mv "$staging/fest" "$bundle"
+ln -s "$bundle/fest" "$link_tmp"
+mv -f "$link_tmp" "$bin_dir/fest"
+# Remove only the old command created by this installer, after fest is ready.
+if [ -L "$bin_dir/music" ]; then
+    case "$(readlink "$bin_dir/music")" in
+        "$install_root"/bundles/*/music) rm "$bin_dir/music" ;;
+    esac
+fi
+echo "installしました: $bin_dir/fest"
 echo 'PATH未設定の場合はterminalで実行: export PATH="$HOME/.local/bin:$PATH"'
-echo '起動: music'
+echo '起動: fest'

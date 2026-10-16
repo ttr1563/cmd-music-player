@@ -130,7 +130,7 @@ def output_device():
         buffersize_msec=100,
         backends=backends,
         thread_prio=miniaudio.ThreadPriority.NORMAL,
-        app_name="cmd-music-player",
+        app_name="fest",
     )
 
 

@@ -16,7 +16,7 @@ jobs:
     if: >-
       github.event.label.name == 'build-macos-preview' &&
       github.event.pull_request.head.repo.full_name == github.repository &&
-      github.event.pull_request.head.ref == 'feature/youtube-music-cli'
+      startsWith(github.event.pull_request.head.ref, 'release/')
     strategy:
       max-parallel: 1
       fail-fast: true
@@ -29,7 +29,7 @@ jobs:
     env:
       GH_TOKEN: ${{ github.token }}
       GH_REPO: ${{ github.repository }}
-      PREVIEW_TAG: v0.2.0
+      PREVIEW_TAG: v0.3.0
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
@@ -52,7 +52,7 @@ jobs:
       - name: Attach to draft only (no Actions artifact storage)
         run: |
           test "$(gh release view "$PREVIEW_TAG" --json isDraft --jq .isDraft)" = true
-          gh release upload "$PREVIEW_TAG" dist/music-0.2.0-darwin-*.tar.gz*
+          gh release upload "$PREVIEW_TAG" dist/fest-0.3.0-darwin-*.tar.gz*
           if [ "$RUNNER_ARCH" = ARM64 ]; then
             gh release upload "$PREVIEW_TAG" scripts/install.sh
           fi

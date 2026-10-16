@@ -71,7 +71,7 @@ def login(store: Store, name: str) -> None:
     config = store.read_config()
     config["account"] = name
     store.save_config(config)
-    print(f"保存しました: {name}。musicで起動できます。")
+    print(f"保存しました: {name}。festで起動できます。")
 
 
 def choose_account(store: Store, name: str | None) -> None:
@@ -81,7 +81,7 @@ def choose_account(store: Store, name: str | None) -> None:
     else:
         if not store.has_vault():
             raise UserError(
-                "保存accountがありません。music login 名前、またはmusic account guestを利用。"
+                "保存accountがありません。fest login 名前、またはfest account guestを利用。"
             )
         accounts, _ = unlock(store)
         if name is None:
@@ -93,7 +93,7 @@ def choose_account(store: Store, name: str | None) -> None:
                 raise UserError("一覧の番号を選択してください。")
             name = names[int(value) - 1]
         if name != "guest" and name not in accounts:
-            raise UserError("保存されていないaccountです。music accountで確認してください。")
+            raise UserError("保存されていないaccountです。fest accountで確認してください。")
         config["account"] = None if name == "guest" else name
     store.save_config(config)
     print(f"使用account: {config['account'] or 'guest'}")
@@ -121,7 +121,7 @@ def doctor(store: Store, audio_test: bool = False) -> int:
 
 
 def parser() -> argparse.ArgumentParser:
-    root = argparse.ArgumentParser(description="YouTube Music terminal player")
+    root = argparse.ArgumentParser(prog="fest", description="YouTube Music terminal player")
     root.add_argument("--data-dir", type=Path, help="専用データ保存先")
     root.add_argument("--guest", action="store_true", help="保存accountを使わず起動")
     commands = root.add_subparsers(dest="command")
@@ -176,7 +176,7 @@ def run(args: argparse.Namespace) -> int:
         print("ローカルの認証情報を削除しました。browserのログインは変更していません。")
     elif args.command == "purge":
         print(f"削除対象: {store.directory} 内のconfig.jsonとvault.enc")
-        print("他のmusicをすべて終了してから実行してください。")
+        print("他のfestをすべて終了してから実行してください。")
         if args.yes or confirm("設定と保存accountを削除しますか？"):
             store.purge()
             print("アプリ所有の保存データを削除しました。")
@@ -218,7 +218,7 @@ def run(args: argparse.Namespace) -> int:
         if not args.guest and config["account"]:
             accounts, phrase = unlock(store)
             if config["account"] not in accounts:
-                raise UserError("選択accountがありません。music account guestで解除してください。")
+                raise UserError("選択accountがありません。fest account guestで解除してください。")
             headers = accounts[config["account"]]
             del phrase, accounts
         from .tui import MusicApp
@@ -233,7 +233,7 @@ def main() -> None:
     except (UserError, OSError) as error:
         # OSError.strerror does not include file contents or authentication data.
         message = str(error) if isinstance(error, UserError) else error.strerror
-        print(f"music: {message}", file=sys.stderr)
+        print(f"fest: {message}", file=sys.stderr)
         code = 1
     except (KeyboardInterrupt, EOFError):
         print("\n終了しました。", file=sys.stderr)

@@ -4,7 +4,7 @@
 
 - 対象はYouTube Musicのみ。Spotify / Apple Musicは今回実装しない。
 - macOS / Linux / Windowsを設計対象とする。OS実機未検証を対応済みとは扱わない。
-- `music`でTUIを起動し、検索、選曲、ライブラリ、プレイリスト、音声再生を操作する。
+- `fest`でTUIを起動し、検索、選曲、ライブラリ、プレイリスト、音声再生を操作する。
 - 音声は内蔵PyAV decoderとminiaudioからOS標準の出力先へ送る。mpv/FFmpegの外部実行なし。
 - TUI終了時はresolverとアプリ所有のaudio workerも終了・reapする。
 - 使用アカウントを選択可能。認証は既存browser sessionの必要なheaderのみを明示入力する。
@@ -68,6 +68,13 @@ native libraryのraw logは抑制し、固定error codeだけを親へ渡す。
 revision比較で上書きを拒否する。crashで残ったlockは全instance停止後に空directoryだけ削除する。
 
 ## 配布と移行（0.2.0）
+
+0.3.0では公開コマンドと配布binary/archiveを`fest`へ変更する。
+Python package名`music-cli-local`、module名`music_cli`、保存先とmarker/AAD、
+MUSIC_CLI_HOMEとMUSIC_INSTALL_PREFIXは互換性のため維持する。vault/config v1の移行不要。
+旧`music`aliasは新たに作成せず、installer更新成功時に所有rootの旧bundleを指すlinkだけ削除する。
+他の`music`file/linkを触らず、`fest`に別commandがある場合は導入前に停止する。
+uv導入は同一packageをreinstallしてentrypointを切り替える。旧公開tag v0.2.0は変更しない。
 
 Python>=3.12、PyAV19.0.1/miniaudio1.71のbinary wheelを利用。Mac ARM64は14以上、
 Intelは11以上。Windows x64/Linux x64はPyAV/miniaudioの対応wheelとOS音声出力環境が必要。

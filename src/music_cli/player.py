@@ -15,7 +15,7 @@ from .runtime import resolver_command
 from .storage import UserError
 
 ERROR_MESSAGES = {
-    "login_required": "YouTubeのログイン確認が必要です。music loginで認証を更新してください。",
+    "login_required": "YouTubeのログイン確認が必要です。fest loginで認証を更新してください。",
     "rate_limited": "YouTubeのアクセス制限に達しました。しばらく時間を置いてください。",
     "format_unavailable": "音声形式を取得できません。yt-dlpとJS runtimeの状態を確認してください。",
     "extract_failed": "再生URLを取得できません。接続・認証・yt-dlpを確認してください。",
@@ -77,7 +77,7 @@ class Player:
             raise UserError("再生URLの応答が不正です。") from error
         except OSError as error:
             raise UserError(
-                "音声再生processを起動できません。music doctorで確認してください。"
+                "音声再生processを起動できません。fest doctorで確認してください。"
             ) from error
         finally:
             await self._finish_resolver(process)

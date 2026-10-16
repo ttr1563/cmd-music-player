@@ -1,4 +1,4 @@
-# cmd-music-player
+# fest
 
 ターミナルでYouTube Musicを検索・選曲して、音声を再生する非公式プレイヤーです。
 
@@ -14,20 +14,20 @@
 
 | Mac | 配布ファイル |
 | --- | --- |
-| Apple Silicon（M1以降） | `music-0.2.0-darwin-arm64.tar.gz` |
-| Intel | `music-0.2.0-darwin-x86_64.tar.gz` |
+| Apple Silicon（M1以降） | `fest-0.3.0-darwin-arm64.tar.gz` |
+| Intel | `fest-0.3.0-darwin-x86_64.tar.gz` |
 
 3つのファイルをダウンロードフォルダに置き、ターミナルで実行します。
 
 Intelの場合: ファイル名の`arm64`を`x86_64`に変更してください。
 
 ```console
-sh "$HOME/Downloads/install.sh" "$HOME/Downloads/music-0.2.0-darwin-arm64.tar.gz"
+sh "$HOME/Downloads/install.sh" "$HOME/Downloads/fest-0.3.0-darwin-arm64.tar.gz"
 export PATH="$HOME/.local/bin:$PATH"
-music
+fest
 ```
 
-新しいターミナルで`music`が見つからない場合は、上の`export PATH=…`を再実行してください。
+新しいターミナルで`fest`が見つからない場合は、上の`export PATH=…`を再実行してください。
 
 ## 使い方
 
@@ -43,8 +43,8 @@ music
 自分のライブラリやプレイリストを使う場合は、ログインします。
 
 ```console
-music login personal
-music account
+fest login personal
+fest account
 ```
 
 [ログイン手順](docs/usage.md#初回ログインとアカウント選択)に従って認証してください。
@@ -52,12 +52,12 @@ music account
 
 ## 更新・削除
 
-更新はmusicを終了してから、新しい配布ファイルを同じ手順でインストールします。
+更新はfestを終了してから、新しい配布ファイルを同じ手順でインストールします。
 設定と認証情報は引き継がれます。
 
-保存データを削除するには、musicを終了してから`music purge`を実行します。
+保存データを削除するには、festを終了してから`fest purge`を実行します。
 アプリ本体の削除は[アンインストール手順](docs/usage.md#データ削除アンインストール)を参照してください。
 
-困ったときは`music doctor`で状態を確認できます。
+困ったときは`fest doctor`で状態を確認できます。
 
 [詳しい使い方](docs/usage.md)

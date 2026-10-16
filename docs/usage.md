@@ -2,23 +2,23 @@
 
 [READMEに戻る](../README.md)
 
-初回の`music`でYouTube Musicを確認し、guest / loginを選べます。
+初回の`fest`でYouTube Musicを確認し、guest / loginを選べます。
 guestは検索と公開曲の再生を試せます。YouTubeからログイン確認を要求された場合は認証が必要です。
 login後は自分のライブラリ/playlistも利用できます。
-設定は次回から再利用します。内蔵エンジンとJS runtimeは`music doctor`で確認できます。
+設定は次回から再利用します。内蔵エンジンとJS runtimeは`fest doctor`で確認できます。
 
 ```console
-music
-music --guest
-music login personal
-music account
-music account personal
-music account guest
-music config show
-music config set volume 60
-music config set service youtube-music
-music config set account personal
-music logout personal
+fest
+fest --guest
+fest login personal
+fest account
+fest account personal
+fest account guest
+fest config show
+fest config set volume 60
+fest config set service youtube-music
+fest config set account personal
+fest logout personal
 ```
 
 TUI: 検索欄に入力してEnter → 結果一覧でEnterで再生。
@@ -32,7 +32,7 @@ TUI: 検索欄に入力してEnter → 結果一覧でEnterで再生。
 Google passwordを本toolに入力しないでください。現在は自動OAuth loginではなく、
 ytmusicapiのbrowser認証方式で選択accountの必要なrequest headerを取り込みます。
 
-1. `music login personal`を実行。必要ならbrowserを開く案内を選択。
+1. `fest login personal`を実行。必要ならbrowserを開く案内を選択。
 2. ブラウザで https://music.youtube.com を開き、使いたいGoogle accountへ切り替える。
 3. 開発者ツールのNetworkで`/youtubei/v1/browse`宛POST requestを探す。
    見つからなければライブラリを開く。**Request Headers**の値を使う。
@@ -41,7 +41,7 @@ ytmusicapiのbrowser認証方式で選択accountの必要なrequest headerを取
 6. `X-Goog-Authuser`（通常0）、あれば`X-Goog-Pageid`を入力。
 7. account情報の取得に成功した後、保存用passphraseを設定。
 
-別accountも別名で取り込み、`music account 名前`で選択します。
+別accountも別名で取り込み、`fest account 名前`で選択します。
 Google accountの選択はbrowser上で行います。CLIでGoogle account一覧を取得する方式ではありません。
 認証が期限切れなら同じ名前でloginし直します。実際の情報を確認してから置換確認を出します。
 ブラウザ側のCookieを変更・削除したり、Keychainから読み取ったりはしません。
@@ -52,7 +52,7 @@ https://ytmusicapi.readthedocs.io/en/stable/setup/browser.html
 
 ## 保存・暗号化
 
-保存先は`music config path`で確認できます。
+保存先は`fest config path`で確認できます。
 
 | OS | 既定の専用ディレクトリ |
 | --- | --- |
@@ -60,7 +60,7 @@ https://ytmusicapi.readthedocs.io/en/stable/setup/browser.html
 | Linux | `$XDG_CONFIG_HOME/music-cli` または `~/.config/music-cli` |
 | Windows | `%LOCALAPPDATA%\music-cli` |
 
-`MUSIC_CLI_HOME`または`music --data-dir PATH`で変更できます。
+`MUSIC_CLI_HOME`または`fest --data-dir PATH`で変更できます。
 専用領域には`.music-cli`（所有marker）、`config.json`、`vault.enc`だけを保存します。
 volume/service/account識別名は平文、認証headerはscrypt + AES-256-GCMで暗号化します。
 復号鍵とpassphraseは保存しません。保存accountで起動するとpassphraseを要求します。
@@ -73,10 +73,10 @@ OSのswap/crash dumpや同じuser/管理者からのメモリ参照まで防ぐ�
 
 ## データ削除・アンインストール
 
-起動しているmusicをすべて終了してから、同じdata-dir指定で実行してください。
+起動しているfestをすべて終了してから、同じdata-dir指定で実行してください。
 
 ```console
-music purge
+fest purge
 ```
 
 purgeは確認後に既知の保存fileだけを削除します。未知のfileや他のdirectoryは削除しません。
@@ -84,14 +84,14 @@ purgeは確認後に既知の保存fileだけを削除します。未知のfile�
 手動で指定した別data-dir、利用者が作ったbackup、browser/clipboardのデータは別途管理してください。
 uv/pipxやDenoなど他用途でも使うpackageは自動削除しません。
 設定書込み中だけ`.write-lock` directoryを作ります。異常終了で残った場合は、
-すべてのmusicを終了し、その空directoryだけを取り除いてから再実行してください。
+すべてのfestを終了し、その空directoryだけを取り除いてから再実行してください。
 
 
 Macの`install.sh`で導入したアプリ本体は、purge後に次のように削除できます。
 標準の保存先へ導入した場合の手順です。
 
 ```console
-rm "$HOME/.local/bin/music"
+rm "$HOME/.local/bin/fest"
 rm -rf "$HOME/.local/share/music-cli"
 ```
 
