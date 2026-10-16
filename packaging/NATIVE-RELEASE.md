@@ -34,6 +34,12 @@ draft target and separately reviewed execution; previous assets must be retained
 under a different draft before reuse. Do not publish this preview tag directly:
 use the normal versioned release PR, annotated tag and develop back-merge.
 
+Use `build-native-intel` to rebuild only Intel Mac after a target-specific fix.
+Its cryptography source build links OpenSSL statically to avoid conflicting with
+the OpenSSL used by the bundled Python interpreter.
+Use `build-native-windows` to build only Windows. These labels keep the same
+serial execution, draft-only upload and timeout limits.
+
 ## Public binary release remains gated
 
 Python package metadata alone does not establish the bundled FFmpeg/dependency

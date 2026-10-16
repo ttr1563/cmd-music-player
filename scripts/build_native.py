@@ -39,6 +39,8 @@ def main() -> None:
             UV_CACHE_DIR=str(work / "cache"),
             PYTHONUTF8="1",
         )
+        if target == "darwin-x86_64":
+            env["OPENSSL_STATIC"] = "1"
 
         def run(*args: str | Path, timeout: int = 600) -> None:
             subprocess.run(args, cwd=ROOT, env=env, check=True, timeout=timeout)

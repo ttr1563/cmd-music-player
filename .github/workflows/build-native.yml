@@ -14,14 +14,14 @@ concurrency:
 jobs:
   build:
     if: >-
-      github.event.label.name == 'build-native-preview' &&
+      contains(fromJSON('["build-native-preview", "build-native-intel", "build-native-windows"]'), github.event.label.name) &&
       github.event.pull_request.head.repo.full_name == github.repository &&
       startsWith(github.event.pull_request.head.ref, 'release/')
     strategy:
       max-parallel: 1
       fail-fast: true
       matrix:
-        runner: [macos-15, macos-15-intel, windows-2022]
+        runner: ${{ fromJSON(github.event.label.name == 'build-native-intel' && '["macos-15-intel"]' || github.event.label.name == 'build-native-windows' && '["windows-2022"]' || '["macos-15", "macos-15-intel", "windows-2022"]') }}
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 20
     permissions:
