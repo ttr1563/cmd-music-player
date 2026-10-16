@@ -5,7 +5,7 @@ umask 077
 
 fail() { echo "fest install: $*" >&2; exit 1; }
 [ "$(uname -s)" = Darwin ] || fail 'Mac用のinstallerです。'
-[ "$#" -eq 1 ] || fail '使い方: sh install.sh /path/to/fest-0.3.0-darwin-arm64.tar.gz'
+[ "$#" -eq 1 ] || fail '使い方: sh install.sh /path/to/fest-0.4.0-darwin-arm64.tar.gz'
 case "$(uname -m)" in
     arm64) target=darwin-arm64 ;;
     x86_64) target=darwin-x86_64 ;;
@@ -44,7 +44,7 @@ trap 'rm -rf -- "$staging"; rm -f -- "$link_tmp"' EXIT HUP INT TERM
 tar -tzf "$archive" > "$staging/entries"
 awk '/^\// || /(^|\/)\.\.(\/|$)/ || $0 !~ /^fest(\/|$)/ {bad=1} END {exit bad}' "$staging/entries" || fail 'archiveのpathが不正です。'
 tar -xzf "$archive" -C "$staging"
-[ -x "$staging/fest/fest" ] && [ -d "$staging/fest/_internal" ] || fail '配布fileが不足しています。'
+[ -x "$staging/fest/fest" ] && [ -d "$staging/fest/runtime" ] || fail '配布fileが不足しています。'
 case "$target:$(file -b "$staging/fest/fest")" in
     darwin-arm64:*Mach-O*arm64*|darwin-x86_64:*Mach-O*x86_64*) ;;
     *) fail 'このMac用の実行fileではありません。' ;;

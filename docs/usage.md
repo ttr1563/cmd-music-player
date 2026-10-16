@@ -5,7 +5,7 @@
 初回の`fest`でYouTube Musicを確認し、guest / loginを選べます。
 guestは検索と公開曲の再生を試せます。YouTubeからログイン確認を要求された場合は認証が必要です。
 login後は自分のライブラリ/playlistも利用できます。
-設定は次回から再利用します。内蔵エンジンとJS runtimeは`fest doctor`で確認できます。
+設定は次回から再利用します。同梱decoderは`fest doctor`で確認できます。
 
 ```console
 fest
@@ -21,6 +21,7 @@ fest config set account personal
 fest logout personal
 ```
 
+Tabで検索・一覧・各ボタンへ移動できます。
 TUI: 検索欄に入力してEnter → 結果一覧でEnterで再生。
 「ライブラリ」「プレイリスト」で自分の曲を表示。「キューに追加」で選択曲を末尾へ追加。
 「次へ」、一時停止、停止、前後10秒の移動、音量調整に対応します。
@@ -30,9 +31,9 @@ TUI: 検索欄に入力してEnter → 結果一覧でEnterで再生。
 ## 初回ログインとアカウント選択
 
 Google passwordを本toolに入力しないでください。現在は自動OAuth loginではなく、
-ytmusicapiのbrowser認証方式で選択accountの必要なrequest headerを取り込みます。
+選択したアカウントの必要なリクエストヘッダーを取り込みます。
 
-1. `fest login personal`を実行。必要ならbrowserを開く案内を選択。
+1. `fest login personal`を実行します。
 2. ブラウザで https://music.youtube.com を開き、使いたいGoogle accountへ切り替える。
 3. 開発者ツールのNetworkで`/youtubei/v1/browse`宛POST requestを探す。
    見つからなければライブラリを開く。**Request Headers**の値を使う。
@@ -67,7 +68,7 @@ volume/service/account識別名は平文、認証headerはscrypt + AES-256-GCM�
 passphraseを忘れた場合は復旧できません。purgeで保存データを削除してから再認証してください。
 
 認証情報を引数・環境変数・ログ・平文一時fileへ出しません。
-再生エンジンへ渡す一時的なstream URLはlocal IPCで送信します。
+音声URLはGo側で使用し、decoderにはメモリpipeから音声データを渡します。
 OSのswap/crash dumpや同じuser/管理者からのメモリ参照まで防ぐものではありません。
 自動backup/telemetry/ネットワーク待受serverはありません。
 
@@ -82,7 +83,7 @@ fest purge
 purgeは確認後に既知の保存fileだけを削除します。未知のfileや他のdirectoryは削除しません。
 アプリ本体の削除だけでは保存データは消えません。先にpurgeしてください。
 手動で指定した別data-dir、利用者が作ったbackup、browser/clipboardのデータは別途管理してください。
-uv/pipxやDenoなど他用途でも使うpackageは自動削除しません。
+旧版で使用したuv・Denoなどは自動削除しません。
 設定書込み中だけ`.write-lock` directoryを作ります。異常終了で残った場合は、
 すべてのfestを終了し、その空directoryだけを取り除いてから再実行してください。
 
@@ -96,5 +97,4 @@ rm -rf "$HOME/.local/share/music-cli"
 ```
 
 `MUSIC_INSTALL_PREFIX`を指定して導入した場合は、その配置先を削除してください。
-uv/pipxで導入した場合は、それぞれ`uv tool uninstall music-cli-local`、
-`pipx uninstall music-cli-local`でアプリ本体を削除します。
+旧Python版をuv/pipxで導入していた場合は、Go版の導入後に旧ツールだけを削除してください。
