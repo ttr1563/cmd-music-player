@@ -303,8 +303,11 @@ func build() error {
 	}
 	command := exec.CommandContext(ctx, filepath.Join(audio, ffmpeg), "-L")
 	license, err := command.CombinedOutput()
-	if err != nil || !strings.Contains(string(license), "GNU Lesser General Public License") {
-		return errors.New("decoder license check failed")
+	if err != nil {
+		return fmt.Errorf("decoder license check could not start: %w: %s", err, license)
+	}
+	if err = verifyLicense(license); err != nil {
+		return err
 	}
 	if err = os.WriteFile(filepath.Join(notices, "FFMPEG-BUILD.txt"), append([]byte(strings.Join(flags, "\n")+"\n"), license...), 0644); err != nil {
 		return err
@@ -506,6 +509,14 @@ func verifyDecoder(ctx context.Context, decoder string) error {
 		if !nonzero {
 			return errors.New("decoded PCM is silent")
 		}
+	}
+	return nil
+}
+
+func verifyLicense(output []byte) error {
+	text := strings.Join(strings.Fields(string(output)), " ")
+	if !strings.Contains(text, "GNU Lesser General Public License") || !strings.Contains(text, "version 2.1") {
+		return errors.New("decoder license check failed")
 	}
 	return nil
 }

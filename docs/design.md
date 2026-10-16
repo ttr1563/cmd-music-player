@@ -30,6 +30,8 @@ festはYouTube Musicをターミナルから検索・選曲・再生するGo製�
 - FFmpegにはメモリpipeから音声を渡します。URL・認証情報をargvへ渡さず、通信はGo側のHTTPS検証とCDN制限を通します。
 - FFmpegはアプリが所有する子プロセスとして起動・終了・回収します。利用者による別途導入は不要です。
 - decoder/backendを分離し、配布物のhash・license・対応sourceと同じテストで依存更新を確認します。
+- シークはdecoderを再起動し、先頭から指定位置まで読み進めます。長い曲では待ち時間が増えます。Rangeによる高速化は、共有ライブラリのseek可能な入力adapterを追加する段階で、同じ操作・cancel・秘密非保存の条件を維持して導入します。
+- LinuxのGo配布版はPulseAudio/PipeWireの互換サービスを使用します。ALSAだけの環境への対応は、Go出力backendの追加と対象OSのビルド条件を整備してから導入します。
 
 ## 保存・移行・復旧
 
@@ -41,6 +43,9 @@ Go移行でデータ変換は行いません。旧版に戻す場合は全プロ
 ## 運用と拡張境界
 
 月次保守はこの設計とホームの共通設定を確認してから実施します。承認前のmerge、リリース、有料実行は行いません。
-Spotify/Apple Music、playlist編集、download、常駐daemon、自動OAuthは今回対象外です。provider・credential形式・IPCを分離し、追加時に権限と保存形式を設計します。
+Spotify/Apple Music、playlist編集、download、常駐daemon、自動OAuthは今回対象外です。
+サービス追加時はproviderをサービスIDごとに分離し、検索結果とキューも同じサービス内に限定します。認証はvault v2のservice・credential kind付き形式へ拡張し、v1を復号・検証後にYouTube Musicのbrowser headersとして変換します。保存は明示的な移行操作で原子的に行い、旧版へ戻す場合は利用者保管の旧暗号化vaultと旧アプリを一緒に復元します。未知の形式を旧版が上書きする経路は設けません。
+OAuthはサービス側のclient登録・必要scope・契約条件を確認してから追加し、browser headersと混同しません。daemonを追加する場合はOSユーザー限定のlocal IPCを使い、セッション終了・purge前に所有プロセスを停止します。公開portや認証平文のIPCファイルは作りません。
+依存更新は固定したversion/hashと同じ製品テスト・配布検査を通し、承認済みの配布物だけを使用します。自動ダウンロード・実行は今回追加しません。
 署名・公証は未設定です。配布はライセンス資料、実機検証状況、rollbackを明記して行います。
 旧実装の経緯はGit履歴とtasks-mdを参照し、現行要件として継承しません。
