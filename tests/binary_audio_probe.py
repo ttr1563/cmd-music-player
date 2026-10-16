@@ -4,6 +4,7 @@ import io
 
 import av
 import miniaudio
+from ytmusicapi import YTMusic
 
 from music_cli.audio import RATE, AudioSession, PCMBuffer, audio_worker
 
@@ -18,6 +19,7 @@ class ProbeBuffer(PCMBuffer):
 
 
 def probe(connection):
+    YTMusic(requests_session=False)
     encoded = connection.recv()
 
     class ProbeSession(AudioSession):
