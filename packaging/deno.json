@@ -1,9 +1,0 @@
-{
-  "version": "2.9.7",
-  "targets": {
-    "darwin-arm64": ["aarch64-apple-darwin", "5cd46d6268f6f78f5d88bdc7159d20bd44cdaa4b3303474839f87ec6fe7ae25c"],
-    "darwin-x86_64": ["x86_64-apple-darwin", "95daaff11c116a52ad54785e7914c8e9c9cdcaba793c5ed929c74ca2d8e6259a"],
-    "linux-x86_64": ["x86_64-unknown-linux-gnu", "c6527f24f4b16031d3ae4fa9f658d5f11534c8d84ce7dc8502420280919c3490"],
-    "win32-x86_64": ["x86_64-pc-windows-msvc", "a0c3101b4158d1dfb7d6a78a7bf0f3de80c96bb423c152beec8beb22786f2238"]
-  }
-}

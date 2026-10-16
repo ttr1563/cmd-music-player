@@ -14,14 +14,15 @@ concurrency:
 jobs:
   build:
     if: >-
-      github.event.label.name == 'build-native-preview' &&
+      contains(fromJSON('["build-native-preview","build-native-linux","build-native-arm64","build-native-intel","build-native-windows"]'), github.event.label.name) &&
+      github.actor == 'ttr1563' &&
       github.event.pull_request.head.repo.full_name == github.repository &&
-      startsWith(github.event.pull_request.head.ref, 'release/')
+      (startsWith(github.event.pull_request.head.ref, 'release/') || github.event.pull_request.head.ref == 'feature/maintenance-go-migration')
     strategy:
       max-parallel: 1
       fail-fast: true
       matrix:
-        runner: [macos-15, macos-15-intel, windows-2022]
+        runner: ${{ fromJSON(github.event.label.name == 'build-native-linux' && '["ubuntu-22.04"]' || github.event.label.name == 'build-native-arm64' && '["macos-15"]' || github.event.label.name == 'build-native-intel' && '["macos-15-intel"]' || github.event.label.name == 'build-native-windows' && '["windows-2022"]' || '["ubuntu-22.04", "macos-15", "macos-15-intel", "windows-2022"]') }}
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 20
     permissions:
@@ -44,20 +45,45 @@ jobs:
           test "$(gh api "repos/$GH_REPO" --jq .visibility)" = public
           test "$(gh release view "$PREVIEW_TAG" --json isDraft --jq .isDraft)" = true
           test "$(gh release view "$PREVIEW_TAG" --json targetCommitish --jq .targetCommitish)" = "$EXPECTED_SHA"
-      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16
         with:
-          python-version: '3.12'
-      - name: Build and verify standalone app
+          go-version: '1.27.2'
+          cache: false
+      - name: Prepare Linux decoder tools
+        if: runner.os == 'Linux'
+        run: |
+          if ! command -v patchelf >/dev/null; then
+            sudo apt-get update -qq
+            sudo apt-get install -y --no-install-recommends patchelf
+          fi
+      - name: Prepare Windows compiler
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $vswhere = "${env:ProgramFiles(x86)}/Microsoft Visual Studio/Installer/vswhere.exe"
+          $vs = & $vswhere -latest -products '*' -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
+          $devcmd = "$vs/Common7/Tools/VsDevCmd.bat"
+          $allowed = @('PATH','INCLUDE','LIB','LIBPATH','VSINSTALLDIR','VCINSTALLDIR','VCToolsInstallDir','WindowsSdkDir','WindowsSDKVersion','UniversalCRTSdkDir','UCRTVersion','VSCMD_ARG_TGT_ARCH','VSCMD_ARG_HOST_ARCH','Platform')
+          cmd /d /s /c "`"`"$devcmd`" -arch=x64 -host_arch=x64 >nul && set`"" | ForEach-Object {
+            $key, $value = $_ -split '=', 2
+            if ($allowed -contains $key) { "$key=$value" >> $env:GITHUB_ENV }
+          }
+      - name: Build and verify Go application
         env:
           GH_TOKEN: ''
-        run: python scripts/build_native.py
+          CGO_ENABLED: '0'
+          GOMAXPROCS: '2'
+        run: |
+          go test -p 1 ./...
+          python3 -m unittest discover -s tests -p 'test_mac_installer.py'
+          go run ./cmd/fest-build
       - name: Attach to draft only (no Actions artifact storage)
         run: |
           test "$(gh release view "$PREVIEW_TAG" --json isDraft --jq .isDraft)" = true
           test "$(gh release view "$PREVIEW_TAG" --json targetCommitish --jq .targetCommitish)" = "$EXPECTED_SHA"
           shopt -s nullglob
-          assets=(dist/fest-*.tar.gz* dist/fest-*.zip* dist/fest-*.native.json)
-          test "${#assets[@]}" -eq 3
+          assets=(dist/fest-*/*.tar.gz* dist/fest-*/*.zip* dist/fest-*/*.native.json)
+          test "${#assets[@]}" -eq 5
           gh release upload "$PREVIEW_TAG" "${assets[@]}"
           if [ "$RUNNER_ARCH" = ARM64 ]; then
             gh release upload "$PREVIEW_TAG" scripts/install.sh
