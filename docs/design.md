@@ -70,7 +70,7 @@ revision比較で上書きを拒否する。crashで残ったlockは全instance�
 ## 配布と移行（0.2.0）
 
 Python>=3.12、PyAV19.0.1/miniaudio1.71のbinary wheelを利用。Mac ARM64は14以上、
-Intelは11以上。Windows x64/Linux x64はwheel条件をREADMEへ記載。
+Intelは11以上。Windows x64/Linux x64はPyAV/miniaudioの対応wheelとOS音声出力環境が必要。
 Windows/Linux ARM64はminiaudio wheelがなく今回の保証外。対応はwheel供給または専用build/検証環境の
 整備後に追加し、利用者PCでnative compileを暗黙に開始しないようinstall commandにno-build-packageを付ける。
 PyAVのFFmpeg依存とminiaudioは依存packageの配布物として取得し、外部mpvを探す経路は削除する。
@@ -89,7 +89,8 @@ Mac hosted buildは通常push/PR作成では走らないlabel起動のみとし�
 install.shはMac archiveのSHA256/architecture/形式を確認してuser領域へ展開し、専用bundleを保持する。
 既存の他commandは上書きせず、旧bundleを残してrollback可能にする。
 
-保存設定/vault v1は移行不要。0.1.0からの更新はREADMEのforce/reinstall/refresh手順を使用。
+保存設定/vault v1は移行不要。ソース導入は[source-install.md](source-install.md)を参照。
+既存toolの更新時は`uv tool install`へ`--force --reinstall --refresh`を追加する。
 rollbackは`dcad5ff56833375edc7f4a583b803a35f3aa3b0c`のarchiveを再installし、旧版に必要なmpvを用意する。
 old/new同時起動と、起動中のupdate/purgeは行わない。旧依存をtool側からOS全体へuninstallしない。
 doctorはlibraryとJS runtimeの確認、doctor --audioはdeviceを開けるか無音の確認を提供する。
