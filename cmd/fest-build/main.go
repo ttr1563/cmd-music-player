@@ -189,6 +189,10 @@ func build() error {
 			return err
 		}
 	}
+	archiveTool := "tar"
+	if runtime.GOOS == "windows" {
+		archiveTool = filepath.Join(os.Getenv("SystemRoot"), "System32", "tar.exe")
+	}
 	client := &http.Client{Timeout: 90 * time.Second}
 	response, err := client.Get(sourceURL)
 	if err != nil {
@@ -214,7 +218,7 @@ func build() error {
 	if hex.EncodeToString(h.Sum(nil)) != sourceSHA {
 		return errors.New("FFmpeg source checksum mismatch")
 	}
-	if err = run(ctx, temporary, os.Environ(), "tar", "-xf", sourceArchive); err != nil {
+	if err = run(ctx, temporary, os.Environ(), archiveTool, "-xf", sourceArchive); err != nil {
 		return err
 	}
 	tree := filepath.Join(temporary, "ffmpeg-9.0.2")
@@ -398,7 +402,7 @@ func build() error {
 	if err = os.Mkdir(unpacked, 0755); err != nil {
 		return err
 	}
-	if err = run(ctx, root, env, "tar", "-xf", output, "-C", unpacked); err != nil {
+	if err = run(ctx, root, env, archiveTool, "-xf", output, "-C", unpacked); err != nil {
 		return err
 	}
 	if err = run(ctx, root, env, filepath.Join(unpacked, "fest", exe), "--data-dir", filepath.Join(temporary, "unpacked-data"), "doctor"); err != nil {
