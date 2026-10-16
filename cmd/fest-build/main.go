@@ -158,6 +158,47 @@ func archive(root, output string) error {
 	}
 	return gc
 }
+func extractZIP(source, destination string) error {
+	z, err := zip.OpenReader(source)
+	if err != nil {
+		return err
+	}
+	defer z.Close()
+	root, err := os.OpenRoot(destination)
+	if err != nil {
+		return err
+	}
+	defer root.Close()
+	for _, entry := range z.File {
+		if !entry.Mode().IsRegular() {
+			return errors.New("bundle ZIP contains a non-regular file")
+		}
+		name := filepath.FromSlash(entry.Name)
+		if err = root.MkdirAll(filepath.Dir(name), 0755); err != nil {
+			return err
+		}
+		input, err := entry.Open()
+		if err != nil {
+			return err
+		}
+		output, err := root.OpenFile(name, os.O_CREATE|os.O_EXCL|os.O_WRONLY, entry.Mode().Perm())
+		if err != nil {
+			input.Close()
+			return err
+		}
+		_, err = io.Copy(output, input)
+		input.Close()
+		closeErr := output.Close()
+		if err != nil {
+			return err
+		}
+		if closeErr != nil {
+			return closeErr
+		}
+	}
+	return nil
+}
+
 func build() error {
 	ctx, cancel := context.WithTimeout(context.Background(), 18*time.Minute)
 	defer cancel()
@@ -200,7 +241,7 @@ func build() error {
 	}
 	archiveTool := "tar"
 	if runtime.GOOS == "windows" {
-		archiveTool = filepath.Join(os.Getenv("SystemRoot"), "System32", "tar.exe")
+		archiveTool = "C:/msys64/usr/bin/tar.exe"
 	}
 	client := &http.Client{Timeout: 90 * time.Second}
 	response, err := client.Get(sourceURL)
@@ -228,7 +269,7 @@ func build() error {
 		return errors.New("FFmpeg source checksum mismatch")
 	}
 	extractCtx, cancelExtract := context.WithTimeout(ctx, 90*time.Second)
-	err = run(extractCtx, temporary, os.Environ(), archiveTool, "-xf", sourceArchive)
+	err = run(extractCtx, sources, os.Environ(), archiveTool, "-xf", filepath.Base(sourceArchive), "-C", filepath.ToSlash(temporary))
 	cancelExtract()
 	if err != nil {
 		return err
@@ -426,7 +467,12 @@ func build() error {
 	if err = os.Mkdir(unpacked, 0755); err != nil {
 		return err
 	}
-	if err = run(ctx, root, env, archiveTool, "-xf", output, "-C", unpacked); err != nil {
+	if runtime.GOOS == "windows" {
+		err = extractZIP(output, unpacked)
+	} else {
+		err = run(ctx, root, env, archiveTool, "-xf", output, "-C", unpacked)
+	}
+	if err != nil {
 		return err
 	}
 	if err = run(ctx, root, env, filepath.Join(unpacked, "fest", exe), "--data-dir", filepath.Join(temporary, "unpacked-data"), "doctor"); err != nil {
