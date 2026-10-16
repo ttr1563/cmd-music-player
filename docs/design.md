@@ -31,7 +31,7 @@ festはYouTube Musicをターミナルから検索・選曲・再生するGo製�
 - FFmpegはアプリが所有する子プロセスとして起動・終了・回収します。利用者による別途導入は不要です。
 - decoder/backendを分離し、配布物のhash・license・対応sourceと同じテストで依存更新を確認します。
 - シークはdecoderを再起動し、先頭から指定位置まで読み進めます。長い曲では待ち時間が増えます。Rangeによる高速化は、共有ライブラリのseek可能な入力adapterを追加する段階で、同じ操作・cancel・秘密非保存の条件を維持して導入します。
-- LinuxのGo配布版はPulseAudio/PipeWireの互換サービスを使用します。ALSAだけの環境への対応は、Go出力backendの追加と対象OSのビルド条件を整備してから導入します。
+- Linuxの配布ビルドはglibc 2.28を基準にし、Go音声出力はPulseAudio/PipeWireの互換サービスを使用します。ALSAだけの環境への対応は、Go出力backendの追加と対象OSのビルド条件を整備してから導入します。
 
 ## 保存・移行・復旧
 

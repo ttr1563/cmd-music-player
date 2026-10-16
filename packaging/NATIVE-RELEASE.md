@@ -2,6 +2,7 @@
 
 対象OSで`go run ./cmd/fest-build`を実行します。アプリ本体はGo、音声decoderはLGPL構成のFFmpegです。
 macOS arm64/amd64、Windows amd64、Linux amd64を対象とします。WindowsはWSL不要です。
+Linuxの配布ビルドはglibc 2.28を基準とする固定イメージを使い、古いglibc環境との互換性を確認します。
 
 配布フォルダは`fest`実行ファイル、`runtime/`、`notices/`です。アーカイブ、SHA-256、対応ソースを一緒に配布します。
 Python版の確認用draftは公開しません。署名・公証は未設定です。
