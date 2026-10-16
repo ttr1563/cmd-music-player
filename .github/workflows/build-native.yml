@@ -1,4 +1,4 @@
-name: Build Mac preview (explicit label only)
+name: Build native preview (explicit label only)
 
 on:
   pull_request:
@@ -8,20 +8,20 @@ permissions:
   contents: read
 
 concurrency:
-  group: macos-preview-${{ github.event.pull_request.number }}
+  group: native-preview-${{ github.event.pull_request.number }}
   cancel-in-progress: false
 
 jobs:
   build:
     if: >-
-      github.event.label.name == 'build-macos-preview' &&
+      github.event.label.name == 'build-native-preview' &&
       github.event.pull_request.head.repo.full_name == github.repository &&
       startsWith(github.event.pull_request.head.ref, 'release/')
     strategy:
       max-parallel: 1
       fail-fast: true
       matrix:
-        runner: [macos-15, macos-15-intel]
+        runner: [macos-15, macos-15-intel, windows-2022]
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 20
     permissions:
@@ -29,15 +29,17 @@ jobs:
     env:
       GH_TOKEN: ${{ github.token }}
       GH_REPO: ${{ github.repository }}
-      PREVIEW_TAG: v0.3.0
+      EXPECTED_SHA: ${{ github.event.pull_request.head.sha }}
+      PREVIEW_TAG: native-preview-pr-${{ github.event.pull_request.number }}
+    defaults:
+      run:
+        shell: bash
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           ref: ${{ github.event.pull_request.head.sha }}
           persist-credentials: false
       - name: Verify public repo and existing draft destination
-        env:
-          EXPECTED_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
           test "$(gh api "repos/$GH_REPO" --jq .visibility)" = public
           test "$(gh release view "$PREVIEW_TAG" --json isDraft --jq .isDraft)" = true
@@ -48,11 +50,15 @@ jobs:
       - name: Build and verify standalone app
         env:
           GH_TOKEN: ''
-        run: sh scripts/build-macos.sh
+        run: python scripts/build_native.py
       - name: Attach to draft only (no Actions artifact storage)
         run: |
           test "$(gh release view "$PREVIEW_TAG" --json isDraft --jq .isDraft)" = true
-          gh release upload "$PREVIEW_TAG" dist/fest-0.3.0-darwin-*.tar.gz*
+          test "$(gh release view "$PREVIEW_TAG" --json targetCommitish --jq .targetCommitish)" = "$EXPECTED_SHA"
+          shopt -s nullglob
+          assets=(dist/fest-*.tar.gz* dist/fest-*.zip* dist/fest-*.native.json)
+          test "${#assets[@]}" -eq 3
+          gh release upload "$PREVIEW_TAG" "${assets[@]}"
           if [ "$RUNNER_ARCH" = ARM64 ]; then
             gh release upload "$PREVIEW_TAG" scripts/install.sh
           fi

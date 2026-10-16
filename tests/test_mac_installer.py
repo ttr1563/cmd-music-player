@@ -12,6 +12,7 @@ from pathlib import Path
 INSTALLER = Path(__file__).resolve().parents[1] / "scripts/install.sh"
 
 
+@unittest.skipIf(os.name == "nt", "Mac installer harness requires POSIX shell and symlinks")
 class MacInstallerTests(unittest.TestCase):
     def setUp(self):
         self.temporary = tempfile.TemporaryDirectory(prefix="music-installer-test-")

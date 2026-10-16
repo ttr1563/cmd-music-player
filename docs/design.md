@@ -90,8 +90,12 @@ buildは対象OS/architecture上で行い、Mac/Windows環境がない段階で�
 dependency metadata/license、Python/Denoのlicense、固定lockを同梱する。
 公開binary release前にFFmpeg等の実際のnative依存のlicense/source/relinking要件を別途確認する。
 署名/notarization・自動updateは未実装。OS別の署名環境と配布経路が必要。
-Mac hosted buildは通常push/PR作成では走らないlabel起動のみとし、owner全体の費用確認後に開始する。
-標準Mac runnerを2architecture直列で使い、対象commit一致かつdraftであるReleaseにのみ添付する。
+native hosted buildは通常push/PR作成では走らないlabel起動のみとし、owner全体の費用確認後に開始する。
+標準Mac runnerの2architectureとWindows x64を直列で使い、対象commit一致かつdraftのReleaseにのみ添付する。
+共通のscripts/build_native.pyでbuildし、配布archiveを展開してからstandalone検証する。
+Windows版はportable ZIPとして配布し、WSL/管理者権限を前提にしない。
+native libraryのpath/SHA256一覧を生成し、targetごとのlicense/source確認証跡に使う。
+公開ゲートと手順は[配布手順](../packaging/NATIVE-RELEASE.md)を参照。
 従量のActions artifact/cache storage、有料large runner、公開操作、tag作成は行わない。
 install.shはMac archiveのSHA256/architecture/形式を確認してuser領域へ展開し、専用bundleを保持する。
 既存の他commandは上書きせず、旧bundleを残してrollback可能にする。
