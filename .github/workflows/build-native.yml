@@ -75,7 +75,9 @@ jobs:
           GOMAXPROCS: '2'
         run: |
           go test -p 1 ./...
-          python3 -m unittest discover -s tests -p 'test_mac_installer.py'
+          if [ "$RUNNER_OS" != Windows ]; then
+            python3 -m unittest discover -s tests -p 'test_mac_installer.py'
+          fi
           go run ./cmd/fest-build
       - name: Attach to draft only (no Actions artifact storage)
         run: |

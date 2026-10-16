@@ -14,3 +14,14 @@ func TestDecoderLicenseGate(t *testing.T) {
 		})
 	}
 }
+
+func TestRequiredPCMOutputCannotBeDisabled(t *testing.T) {
+	enabled := []byte("#define CONFIG_AAC_DECODER 1\n#define CONFIG_OPUS_DECODER 1\n#define CONFIG_PCM_F32LE_ENCODER 1\n#define CONFIG_PCM_F32LE_MUXER 1\n")
+	if err := verifyComponents(enabled); err != nil {
+		t.Fatal(err)
+	}
+	disabled := []byte("#define CONFIG_AAC_DECODER 1\n#define CONFIG_OPUS_DECODER 1\n#define CONFIG_PCM_F32LE_ENCODER 1\n#define CONFIG_PCM_F32LE_MUXER 0\n")
+	if verifyComponents(disabled) == nil {
+		t.Fatal("bundle without PCM output accepted")
+	}
+}

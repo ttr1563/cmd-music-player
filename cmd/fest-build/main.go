@@ -222,7 +222,7 @@ func build() error {
 	env := append(os.Environ(), "CGO_ENABLED=0", "GOMAXPROCS=2")
 	shell := "/bin/sh"
 	makeTool := "make"
-	flags := []string{"--prefix=" + filepath.ToSlash(prefix), "--disable-gpl", "--disable-version3", "--disable-nonfree", "--disable-autodetect", "--disable-network", "--disable-everything", "--disable-doc", "--disable-debug", "--disable-static", "--enable-shared", "--enable-ffmpeg", "--disable-ffprobe", "--disable-x86asm", "--disable-inline-asm", "--enable-decoder=aac,opus,pcm_s16le", "--enable-encoder=pcm_f32le,aac,opus", "--enable-demuxer=mov,matroska,wav", "--enable-muxer=f32le,mp4,webm", "--enable-protocol=pipe", "--enable-filter=abuffer,abuffersink,aresample,aformat,anull,atrim"}
+	flags := []string{"--prefix=" + filepath.ToSlash(prefix), "--disable-gpl", "--disable-version3", "--disable-nonfree", "--disable-autodetect", "--disable-network", "--disable-everything", "--disable-doc", "--disable-debug", "--disable-static", "--enable-shared", "--enable-ffmpeg", "--disable-ffprobe", "--disable-x86asm", "--disable-inline-asm", "--enable-decoder=aac,opus,pcm_s16le", "--enable-encoder=pcm_f32le,aac,opus", "--enable-demuxer=mov,matroska,wav", "--enable-muxer=pcm_f32le,mp4,webm", "--enable-protocol=pipe", "--enable-filter=abuffer,abuffersink,aresample,aformat,anull,atrim"}
 	if runtime.GOOS == "darwin" {
 		flags = append(flags, "--install-name-dir=@rpath", "--extra-ldflags=-Wl,-headerpad_max_install_names")
 		env = append(env, "MACOSX_DEPLOYMENT_TARGET=14.0")
@@ -240,12 +240,6 @@ func build() error {
 	if err = run(ctx, tree, env, shell, append([]string{filepath.ToSlash(filepath.Join(tree, "configure"))}, flags...)...); err != nil {
 		return err
 	}
-	if err = run(ctx, tree, env, makeTool, "-j2"); err != nil {
-		return err
-	}
-	if err = run(ctx, tree, env, makeTool, "install"); err != nil {
-		return err
-	}
 	config, err := os.ReadFile(filepath.Join(tree, "config.h"))
 	if err != nil {
 		return err
@@ -255,6 +249,20 @@ func build() error {
 			return errors.New("FFmpeg license configuration failed")
 		}
 	}
+	components, err := os.ReadFile(filepath.Join(tree, "config_components.h"))
+	if err != nil {
+		return err
+	}
+	if err = verifyComponents(components); err != nil {
+		return err
+	}
+	if err = run(ctx, tree, env, makeTool, "-j2"); err != nil {
+		return err
+	}
+	if err = run(ctx, tree, env, makeTool, "install"); err != nil {
+		return err
+	}
+
 	exe := "fest"
 	ffmpeg := "ffmpeg"
 	if runtime.GOOS == "windows" {
@@ -497,7 +505,7 @@ func verifyDecoder(ctx context.Context, decoder string) error {
 		decode.Stdin = bytes.NewReader(encoded)
 		pcm, err := decode.Output()
 		if err != nil || len(pcm) < 4800*8 {
-			return fmt.Errorf("%s decoding failed", format.codec)
+			return fmt.Errorf("%s decoding failed: bytes=%d, error=%v", format.codec, len(pcm), err)
 		}
 		nonzero := false
 		for _, b := range pcm {
@@ -517,6 +525,15 @@ func verifyLicense(output []byte) error {
 	text := strings.Join(strings.Fields(string(output)), " ")
 	if !strings.Contains(text, "GNU Lesser General Public License") || !strings.Contains(text, "version 2.1") {
 		return errors.New("decoder license check failed")
+	}
+	return nil
+}
+
+func verifyComponents(config []byte) error {
+	for _, name := range []string{"AAC_DECODER", "OPUS_DECODER", "PCM_F32LE_ENCODER", "PCM_F32LE_MUXER"} {
+		if !strings.Contains(string(config), "#define CONFIG_"+name+" 1") {
+			return fmt.Errorf("required audio component disabled: %s", name)
+		}
 	}
 	return nil
 }
