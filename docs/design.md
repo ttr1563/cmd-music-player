@@ -93,6 +93,9 @@ dependency metadata/license、Python/Denoのlicense、固定lockを同梱する�
 native hosted buildは通常push/PR作成では走らないlabel起動のみとし、owner全体の費用確認後に開始する。
 標準Mac runnerの2architectureとWindows x64を直列で使い、対象commit一致かつdraftのReleaseにのみ添付する。
 共通のscripts/build_native.pyでbuildし、配布archiveを展開してからstandalone検証する。
+Linux x64も同じbuild手順をlocalで使う。既存directory/archive/SHA/inventoryは上書きしない。
+展開版のfrozen worker内でAAC/Opusをdecodeし、検証専用NULL出力でpause/volume/seek/EOF/stopを確認する。
+probe codeはtestから渡し、製品への検証mode/NULL fallback追加やURL制限緩和は行わない。
 Windows版はportable ZIPとして配布し、WSL/管理者権限を前提にしない。
 native libraryのpath/SHA256一覧を生成し、targetごとのlicense/source確認証跡に使う。
 公開ゲートと手順は[配布手順](../packaging/NATIVE-RELEASE.md)を参照。

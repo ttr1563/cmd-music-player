@@ -52,7 +52,7 @@ class YouTubeMusic:
         except Exception as error:
             raise UserError(
                 "YouTube Musicへ接続できません。接続を確認し、"
-                "ログイン中ならmusic loginで認証を更新してください。"
+                "ログイン中ならfest loginで認証を更新してください。"
             ) from error
 
     def account_info(self) -> dict:
@@ -94,5 +94,5 @@ class YouTubeMusic:
     def _require_login(self) -> None:
         if not self.headers:
             raise UserError(
-                "この機能にはログインが必要です。終了後にmusic login 名前を実行してください。"
+                "この機能にはログインが必要です。終了後にfest login 名前を実行してください。"
             )

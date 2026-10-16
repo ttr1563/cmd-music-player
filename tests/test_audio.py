@@ -73,9 +73,12 @@ def test_eof_is_reported_after_last_buffer_has_been_consumed():
     assert buffer.drained_at is not None
 
 
-def encoded_audio(codec, format):
+def encoded_audio(codec, format, seconds=0.3):
     encoded = io.BytesIO()
-    with av.open(io.BytesIO(wav_bytes())) as source, av.open(encoded, "w", format=format) as output:
+    with (
+        av.open(io.BytesIO(wav_bytes(seconds))) as source,
+        av.open(encoded, "w", format=format) as output,
+    ):
         stream = output.add_stream(codec, rate=RATE)
         stream.layout = "stereo"
         resampler = av.AudioResampler(

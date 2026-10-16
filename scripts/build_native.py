@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import os
 import platform
 import shutil
@@ -19,7 +20,8 @@ def main() -> None:
     machine = platform.machine().lower()
     arch = {"aarch64": "arm64", "amd64": "x86_64"}.get(machine, machine)
     target = f"{sys.platform}-{arch}"
-    if target not in {"darwin-arm64", "darwin-x86_64", "win32-x86_64"}:
+    manifest = json.loads((ROOT / "packaging/deno.json").read_text())
+    if target not in manifest["targets"]:
         raise SystemExit(f"Unsupported native preview target: {target}")
     if sys.version_info[:2] != (3, 12):
         raise SystemExit("Build with Python 3.12")
