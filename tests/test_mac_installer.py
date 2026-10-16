@@ -32,13 +32,13 @@ class MacInstallerTests(unittest.TestCase):
             PATH=f"{commands}:{os.environ['PATH']}",
             MUSIC_INSTALL_PREFIX=str(self.prefix),
         )
-        self.archive = self.root / "music-0.2.0-darwin-arm64.tar.gz"
+        self.archive = self.root / "fest-0.3.0-darwin-arm64.tar.gz"
 
     def archive_app(self, content=b"#!/bin/sh\nexit 0\n", traversal=False):
         with tarfile.open(self.archive, "w:gz") as archive:
             for name, data, mode in [
-                ("music/music", content, 0o755),
-                ("music/_internal/runtime/deno", b"test-runtime", 0o755),
+                ("fest/fest", content, 0o755),
+                ("fest/_internal/runtime/deno", b"test-runtime", 0o755),
             ]:
                 entry = tarfile.TarInfo("../outside" if traversal else name)
                 entry.size, entry.mode = len(data), mode
@@ -58,7 +58,7 @@ class MacInstallerTests(unittest.TestCase):
     def test_install_and_update_preserve_previous_bundle(self):
         self.archive_app()
         self.assertEqual(self.install().returncode, 0)
-        link = self.prefix / "bin/music"
+        link = self.prefix / "bin/fest"
         previous = link.resolve()
         self.assertTrue(previous.is_file())
         self.archive_app(b"#!/bin/sh\n# updated\nexit 0\n")
@@ -74,7 +74,7 @@ class MacInstallerTests(unittest.TestCase):
 
     def test_other_command_is_not_overwritten(self):
         self.archive_app()
-        command = self.prefix / "bin/music"
+        command = self.prefix / "bin/fest"
         command.parent.mkdir(parents=True)
         command.write_text("existing-command")
         self.assertNotEqual(self.install().returncode, 0)
@@ -85,6 +85,50 @@ class MacInstallerTests(unittest.TestCase):
         self.assertNotEqual(self.install().returncode, 0)
         self.assertFalse(self.prefix.exists())
         self.assertFalse((self.root / "outside").exists())
+
+    def test_existing_music_command_is_preserved(self):
+        self.archive_app()
+        command = self.prefix / "bin/music"
+        command.parent.mkdir(parents=True)
+        command.write_text("another-music-command")
+        self.assertEqual(self.install().returncode, 0)
+        self.assertEqual(command.read_text(), "another-music-command")
+
+    def test_unrelated_music_symlink_is_preserved(self):
+        self.archive_app()
+        target = self.root / "another-player"
+        target.touch()
+        command = self.prefix / "bin/music"
+        command.parent.mkdir(parents=True)
+        command.symlink_to(target)
+        self.assertEqual(self.install().returncode, 0)
+        self.assertEqual(command.resolve(), target)
+
+    def old_installation(self):
+        root = self.prefix / "share/music-cli"
+        old = root / "bundles/previous/music"
+        old.parent.mkdir(parents=True)
+        old.touch()
+        (root / ".music-cli-install").touch()
+        command = self.prefix / "bin/music"
+        command.parent.mkdir(parents=True)
+        command.symlink_to(old)
+        return command, old
+
+    def test_upgrade_removes_only_owned_music_link_and_keeps_old_bundle(self):
+        self.archive_app()
+        command, previous = self.old_installation()
+        self.assertEqual(self.install().returncode, 0)
+        self.assertFalse(command.is_symlink())
+        self.assertTrue(previous.exists())
+        self.assertTrue((self.prefix / "bin/fest").resolve().is_file())
+
+    def test_failed_upgrade_leaves_owned_music_link_intact(self):
+        self.archive_app()
+        command, previous = self.old_installation()
+        (self.prefix / "bin/fest").write_text("another-fest-command")
+        self.assertNotEqual(self.install().returncode, 0)
+        self.assertEqual(command.resolve(), previous)
 
 
 if __name__ == "__main__":

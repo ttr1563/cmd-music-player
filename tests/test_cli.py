@@ -6,6 +6,11 @@ from music_cli.cli import choose_account, doctor, login, parser, run, secret
 from music_cli.storage import DEFAULT_CONFIG, Store, UserError
 
 
+def test_help_and_usage_use_fest():
+    assert parser().prog == "fest"
+    assert parser().format_usage().startswith("usage: fest ")
+
+
 def test_cli_configuration_and_purge_leave_no_app_data(tmp_path, capsys):
     directory = tmp_path / "data"
     prefix = ["--data-dir", str(directory)]

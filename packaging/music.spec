@@ -45,7 +45,7 @@ a = Analysis(
 )
 pyz = PYZ(a.pure)
 exe = EXE(
-    pyz, a.scripts, [], exclude_binaries=True, name="music", console=True,
+    pyz, a.scripts, [], exclude_binaries=True, name="fest", console=True,
     strip=False, upx=False,
 )
-coll = COLLECT(exe, a.binaries, a.datas, strip=False, upx=False, name="music")
+coll = COLLECT(exe, a.binaries, a.datas, strip=False, upx=False, name="fest")
