@@ -44,8 +44,9 @@ a = Analysis(
     noarchive=False,
 )
 pyz = PYZ(a.pure)
+options = [("X utf8", None, "OPTION")] if os.name == "nt" else []
 exe = EXE(
-    pyz, a.scripts, [], exclude_binaries=True, name="fest", console=True,
+    pyz, a.scripts, options, exclude_binaries=True, name="fest", console=True,
     strip=False, upx=False,
 )
 coll = COLLECT(exe, a.binaries, a.datas, strip=False, upx=False, name="fest")
