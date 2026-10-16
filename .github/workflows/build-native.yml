@@ -31,7 +31,7 @@ jobs:
       GH_TOKEN: ${{ github.token }}
       GH_REPO: ${{ github.repository }}
       EXPECTED_SHA: ${{ github.event.pull_request.head.sha }}
-      PREVIEW_TAG: native-preview-pr-${{ github.event.pull_request.number }}
+      PREVIEW_TAG: native-preview-pr-${{ github.event.pull_request.number }}-${{ github.event.pull_request.head.sha }}
     defaults:
       run:
         shell: bash
