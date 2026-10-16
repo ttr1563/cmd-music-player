@@ -103,7 +103,7 @@ class MacInstallerTests(unittest.TestCase):
         command.parent.mkdir(parents=True)
         command.symlink_to(target)
         self.assertEqual(self.install().returncode, 0)
-        self.assertEqual(command.resolve(), target)
+        self.assertEqual(command.resolve(), target.resolve())
 
     def old_installation(self):
         root = self.prefix / "share/music-cli"
@@ -129,7 +129,7 @@ class MacInstallerTests(unittest.TestCase):
         command, previous = self.old_installation()
         (self.prefix / "bin/fest").write_text("another-fest-command")
         self.assertNotEqual(self.install().returncode, 0)
-        self.assertEqual(command.resolve(), previous)
+        self.assertEqual(command.resolve(), previous.resolve())
 
 
 if __name__ == "__main__":
