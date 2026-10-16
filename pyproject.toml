@@ -1,0 +1,40 @@
+[build-system]
+requires = ["hatchling>=1.27,<2"]
+build-backend = "hatchling.build"
+
+[project]
+name = "music-cli-local"
+version = "0.2.0"
+description = "A local-first YouTube Music terminal player"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+  "cryptography==50.0.2",
+  "textual==8.2.8",
+  "ytmusicapi==1.12.3",
+  "yt-dlp[default]==2026.8.19",
+  "av==19.0.1",
+  "miniaudio==1.71",
+  "requests==2.34.2",
+]
+
+[project.scripts]
+music = "music_cli.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/music_cli"]
+
+[dependency-groups]
+dev = ["pytest>=8,<10", "pytest-asyncio>=1,<2", "ruff>=0.14,<1"]
+binary = ["pyinstaller==6.22.3"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
