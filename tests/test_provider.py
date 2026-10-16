@@ -34,7 +34,7 @@ def test_search_keeps_exact_ids_and_filters_unavailable_results():
 
 
 def test_guest_library_fails_with_login_guidance():
-    with pytest.raises(UserError, match="ログイン"):
+    with pytest.raises(UserError, match="fest login"):
         YouTubeMusic().library()
 
 
@@ -45,3 +45,4 @@ def test_raw_upstream_error_is_not_displayed(monkeypatch):
     with pytest.raises(UserError) as captured:
         YouTubeMusic().search("test")
     assert "secret" not in str(captured.value)
+    assert "fest login" in str(captured.value)
