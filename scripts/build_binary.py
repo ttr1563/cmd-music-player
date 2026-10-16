@@ -102,18 +102,18 @@ def main() -> None:
             check=True,
             timeout=600,
         )
-        app = destination / "music"
+        app = destination / "fest"
         # No network, account or sound device required for this installation check.
         subprocess.run(
-            [app / ("music.exe" if os.name == "nt" else "music"), "--help"], check=True, timeout=30
+            [app / ("fest.exe" if os.name == "nt" else "fest"), "--help"], check=True, timeout=30
         )
-        name = ROOT / "dist" / f"music-{package_version}-{target}"
+        name = ROOT / "dist" / f"fest-{package_version}-{target}"
         if os.name == "nt":
-            artifact = Path(shutil.make_archive(str(name), "zip", destination, "music"))
+            artifact = Path(shutil.make_archive(str(name), "zip", destination, "fest"))
         else:
             artifact = Path(str(name) + ".tar.gz")
             with tarfile.open(artifact, "w:gz", dereference=False) as output:
-                output.add(app, arcname="music")
+                output.add(app, arcname="fest")
         with artifact.open("rb") as source:
             digest = hashlib.file_digest(source, "sha256").hexdigest()
         artifact.with_name(artifact.name + ".sha256").write_text(

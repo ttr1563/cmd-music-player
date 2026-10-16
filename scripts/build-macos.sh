@@ -19,4 +19,4 @@ case "$(uname -m)" in
     x86_64) target=darwin-x86_64 ;;
     *) echo '未対応のMac architectureです。' >&2; exit 1 ;;
 esac
-"$build_dir/env/bin/python" tests/binary_smoke.py "$project_dir/dist/binary-$target/music/music"
+"$build_dir/env/bin/python" tests/binary_smoke.py "$project_dir/dist/binary-$target/fest/fest"

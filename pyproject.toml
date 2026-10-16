@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "music-cli-local"
-version = "0.2.0"
+version = "0.3.0"
 description = "A local-first YouTube Music terminal player"
 readme = "README.md"
 requires-python = ">=3.12"
@@ -19,7 +19,7 @@ dependencies = [
 ]
 
 [project.scripts]
-music = "music_cli.cli:main"
+fest = "music_cli.cli:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/music_cli"]

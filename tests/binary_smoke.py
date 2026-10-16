@@ -1,4 +1,4 @@
-"""Run after building: python tests/binary_smoke.py /absolute/path/to/music."""
+"""Run after building: python tests/binary_smoke.py /absolute/path/to/fest."""
 
 from __future__ import annotations
 

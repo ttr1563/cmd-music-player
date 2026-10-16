@@ -18,7 +18,7 @@ from .storage import UserError
 
 
 class MusicApp(App):
-    TITLE = "music · YouTube Music"
+    TITLE = "fest · YouTube Music"
     CSS = """
     Screen { layout: vertical; }
     #identity { height: 1; padding: 0 1; color: $text-muted; }
