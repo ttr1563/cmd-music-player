@@ -14,15 +14,15 @@
 
 | Mac | 配布ファイル |
 | --- | --- |
-| Apple Silicon（M1以降） | `fest-0.3.0-darwin-arm64.tar.gz` |
-| Intel | `fest-0.3.0-darwin-x86_64.tar.gz` |
+| Apple Silicon（M1以降） | `fest-0.4.0-darwin-arm64.tar.gz` |
+| Intel | `fest-0.4.0-darwin-x86_64.tar.gz` |
 
 3つのファイルをダウンロードフォルダに置き、ターミナルで実行します。
 
 Intelの場合: ファイル名の`arm64`を`x86_64`に変更してください。
 
 ```console
-sh "$HOME/Downloads/install.sh" "$HOME/Downloads/fest-0.3.0-darwin-arm64.tar.gz"
+sh "$HOME/Downloads/install.sh" "$HOME/Downloads/fest-0.4.0-darwin-arm64.tar.gz"
 export PATH="$HOME/.local/bin:$PATH"
 fest
 ```

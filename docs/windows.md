@@ -13,12 +13,12 @@ ARM版WindowsとWSL内での動作は未検証です。
 PowerShellで、ファイル名を実際の配布ファイル名に置き換えて実行してください。
 
 ```console
-$archive = "$HOME\Downloads\fest-0.3.0-win32-x86_64.zip"
+$archive = "$HOME\Downloads\fest-0.4.0-win32-x86_64.zip"
 $expected = ((Get-Content -LiteralPath "$archive.sha256" -Raw).Trim() -split '\s+')[0]
 if ((Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash -ine $expected) { throw 'Checksum mismatch' }
-Expand-Archive -LiteralPath $archive -DestinationPath "$HOME\fest-0.3.0"
-& "$HOME\fest-0.3.0\fest\fest.exe" doctor
-& "$HOME\fest-0.3.0\fest\fest.exe"
+Expand-Archive -LiteralPath $archive -DestinationPath "$HOME\fest-0.4.0"
+& "$HOME\fest-0.4.0\fest\fest.exe" doctor
+& "$HOME\fest-0.4.0\fest\fest.exe"
 ```
 
 展開先に同名フォルダーがある場合は、別の空の場所へ展開してください。
@@ -29,7 +29,7 @@ Expand-Archive -LiteralPath $archive -DestinationPath "$HOME\fest-0.3.0"
 ユーザーのPathに追加してください。
 
 ```console
-$env:Path = "$HOME\fest-0.3.0\fest;$env:Path"
+$env:Path = "$HOME\fest-0.4.0\fest;$env:Path"
 fest
 ```
 
