@@ -11,7 +11,7 @@ root = Path(SPECPATH).parent
 staging = Path(os.environ["MUSIC_BINARY_STAGING"])
 datas = [(str(staging / "notices"), "notices")]
 binaries = [(str(staging / "runtime" / ("deno.exe" if os.name == "nt" else "deno")), "runtime")]
-hiddenimports = []
+hiddenimports = ["_contextvars"]
 for package in ("ytmusicapi", "yt_dlp", "yt_dlp_ejs", "av", "miniaudio", "textual", "certifi"):
     data, native, hidden = collect_all(package)
     datas += data
