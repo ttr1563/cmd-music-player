@@ -1,5 +1,6 @@
 import importlib.util
 import json
+import os
 from pathlib import Path
 from unittest.mock import Mock
 
@@ -51,3 +52,20 @@ def test_checksum_failure_never_executes_downloaded_content(builder, monkeypatch
     with pytest.raises(SystemExit, match="checksum mismatch"):
         builder.main()
     execute.assert_not_called()
+
+
+@pytest.mark.parametrize("kind", ["archive", "checksum", "inventory"])
+def test_existing_release_file_is_preserved_before_network(builder, monkeypatch, kind):
+    extension = ".zip" if os.name == "nt" else ".tar.gz"
+    suffix = {"archive": extension, "checksum": extension + ".sha256", "inventory": ".native.json"}[
+        kind
+    ]
+    output = builder.ROOT / "dist" / f"fest-0.2.0-linux-x86_64{suffix}"
+    output.parent.mkdir()
+    output.write_bytes(b"previous-release")
+    fetch = Mock()
+    monkeypatch.setattr(builder, "download", fetch)
+    with pytest.raises(SystemExit, match="Output exists"):
+        builder.main()
+    fetch.assert_not_called()
+    assert output.read_bytes() == b"previous-release"

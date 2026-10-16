@@ -38,8 +38,12 @@ def main() -> None:
     version = manifest["version"]
     package_version = tomllib.loads((ROOT / "pyproject.toml").read_text())["project"]["version"]
     destination = ROOT / "dist" / f"binary-{target}"
-    if destination.exists():
-        raise SystemExit(f"Output exists; move it before rebuilding: {destination}")
+    name = ROOT / "dist" / f"fest-{package_version}-{target}"
+    artifact = Path(str(name) + (".zip" if os.name == "nt" else ".tar.gz"))
+    checksum = artifact.with_name(artifact.name + ".sha256")
+    for output in (destination, artifact, checksum, Path(str(name) + ".native.json")):
+        if output.exists() or output.is_symlink():
+            raise SystemExit(f"Output exists; move it before rebuilding: {output}")
     with tempfile.TemporaryDirectory(prefix="music-build-") as temporary:
         staging = Path(temporary)
         runtime = staging / "runtime"
@@ -107,18 +111,14 @@ def main() -> None:
         subprocess.run(
             [app / ("fest.exe" if os.name == "nt" else "fest"), "--help"], check=True, timeout=30
         )
-        name = ROOT / "dist" / f"fest-{package_version}-{target}"
         if os.name == "nt":
             artifact = Path(shutil.make_archive(str(name), "zip", destination, "fest"))
         else:
-            artifact = Path(str(name) + ".tar.gz")
             with tarfile.open(artifact, "w:gz", dereference=False) as output:
                 output.add(app, arcname="fest")
         with artifact.open("rb") as source:
             digest = hashlib.file_digest(source, "sha256").hexdigest()
-        artifact.with_name(artifact.name + ".sha256").write_text(
-            f"{digest}  {artifact.name}\n", encoding="utf-8"
-        )
+        checksum.write_text(f"{digest}  {artifact.name}\n", encoding="utf-8")
         print(f"Built {artifact}")
 
 

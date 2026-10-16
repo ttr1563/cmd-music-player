@@ -2,13 +2,18 @@
 
 Maintainers build on each destination OS with Python 3.12:
 `python scripts/build_native.py`. Users need none of the build tools.
-Supported preview targets are macOS arm64/x86_64 and native Windows x64.
+Supported build targets are macOS arm64/x86_64, native Windows x64 and Linux x64.
+Linux builds run locally; no Linux Actions job is configured. Linux distribution
+compatibility depends on glibc and native dependencies and needs separate checks.
 The existing Mac shell entry point delegates to this same script.
 
 Each build installs locked dependencies, runs the applicable tests, freezes the
 app, records native library paths/checksums in `dist/*.native.json`, then unpacks
 the distributable and exercises doctor/config/purge/resolver/Deno and the spawned
-audio worker. These checks use no account, network playback or physical audio.
+audio worker. The frozen worker also decodes synthetic AAC/Opus through a real
+miniaudio NULL callback, exercising pause/volume/seek/EOF/stop and process cleanup.
+The probe stays in the test harness; no test mode or NULL fallback ships in fest.
+These checks use no account, network playback or physical audio.
 The Mac shell-installer harness is POSIX-only and is skipped on Windows.
 
 ## One candidate, three serial jobs

@@ -13,6 +13,81 @@ from pathlib import Path
 from music_cli.audio import audio_worker
 
 
+def start_frozen_worker(worker, internal):
+    original_path = sys.path
+    main_module = sys.modules["__main__"]
+    original_file = main_module.__file__
+    try:
+        sys.frozen = True
+        sys.path = [
+            str(internal),
+            str(internal / "base_library.zip"),
+            str(internal / "lib-dynload"),
+        ]
+        del main_module.__file__
+        worker.start()
+    finally:
+        sys.path = original_path
+        del sys.frozen
+        main_module.__file__ = original_file
+
+
+def receive(connection):
+    assert connection.poll(15), "Bundled worker did not respond"
+    return connection.recv()
+
+
+def check_frozen_audio(context, internal):
+    from test_audio import encoded_audio
+
+    probe = Path(__file__).with_name("binary_audio_probe.py").read_text(encoding="utf-8")
+    for codec, container, stop in [
+        ("aac", "mp4", False),
+        ("libopus", "webm", False),
+        ("aac", "mp4", True),
+    ]:
+        encoded = encoded_audio(codec, container, seconds=2)
+        parent, child = context.Pipe()
+        # exec is a picklable builtin already available to the frozen interpreter.
+        # All probe code and fixtures stay in the test harness, outside the app.
+        worker = context.Process(
+            target=exec,
+            args=(probe, {"__name__": "__frozen_audio_probe__", "connection": child}),
+        )
+        start_frozen_worker(worker, internal)
+        child.close()
+        try:
+            parent.send(encoded)
+            parent.send({"url": "https://r1.googlevideo.com/synthetic", "volume": 70})
+            assert receive(parent) == {"event": "ready"}
+            parent.send({"op": "pause", "value": True})
+            parent.send({"op": "volume", "value": 30})
+            parent.send({"op": "seek", "value": 1.6})
+            assert receive(parent) == {"event": "probe-seek", "paused": True, "volume": 30}
+            assert not parent.poll(0.1), "Paused audio reached EOF"
+            parent.send({"op": "stop"} if stop else {"op": "pause", "value": False})
+            if not stop:
+                assert receive(parent) == {"event": "end", "reason": "eof"}
+            closed = receive(parent)
+            assert closed["event"] == "probe-closed"
+            assert closed["device_closed"] and not closed["decoder_alive"]
+            if not stop:
+                assert closed["position"] > 1.6
+                assert closed["nonzero_pcm"], "Decoded audio never reached the device callback"
+            worker.join(10)
+            assert worker.exitcode == 0
+        finally:
+            if worker.is_alive():
+                worker.kill()
+                worker.join(5)
+            worker.close()
+            parent.close()
+        print(
+            f"Bundled {codec}: pause/volume/seek/{'stop' if stop else 'EOF'}/reap"
+            " passed (NULL output)"
+        )
+
+
 def main() -> None:
     executable = Path(sys.argv[1]).resolve()
     internal = executable.parent / "_internal"
@@ -93,22 +168,7 @@ def main() -> None:
     context.set_executable(str(executable))
     parent, child = context.Pipe()
     worker = context.Process(target=audio_worker, args=(child,))
-    original_path = sys.path
-    main_module = sys.modules["__main__"]
-    original_file = main_module.__file__
-    try:
-        sys.frozen = True
-        sys.path = [
-            str(internal),
-            str(internal / "base_library.zip"),
-            str(internal / "lib-dynload"),
-        ]
-        del main_module.__file__
-        worker.start()
-    finally:
-        sys.path = original_path
-        del sys.frozen
-        main_module.__file__ = original_file
+    start_frozen_worker(worker, internal)
     child.close()
     try:
         parent.send({"url": "http://invalid.example/", "volume": 0})
@@ -122,7 +182,8 @@ def main() -> None:
             worker.join(5)
         worker.close()
         parent.close()
-    print("Standalone doctor/config/purge/resolver/Deno/spawn checks passed")
+    check_frozen_audio(context, internal)
+    print("Standalone doctor/config/purge/resolver/Deno/spawn and offline audio checks passed")
 
 
 if __name__ == "__main__":
