@@ -49,7 +49,6 @@ Google accountの選択はbrowser上で行います。CLIでGoogle account一覧
 
 認証取込み中だけCookieがclipboardに載ります。作業後は別の文字列をコピーして消してください。
 Cookie、request header、vaultのpassphraseをchatやissueへ貼らないでください。
-https://ytmusicapi.readthedocs.io/en/stable/setup/browser.html
 
 ## 保存・暗号化
 
@@ -83,7 +82,6 @@ fest purge
 purgeは確認後に既知の保存fileだけを削除します。未知のfileや他のdirectoryは削除しません。
 アプリ本体の削除だけでは保存データは消えません。先にpurgeしてください。
 手動で指定した別data-dir、利用者が作ったbackup、browser/clipboardのデータは別途管理してください。
-旧版で使用したuv・Denoなどは自動削除しません。
 設定書込み中だけ`.write-lock` directoryを作ります。異常終了で残った場合は、
 すべてのfestを終了し、その空directoryだけを取り除いてから再実行してください。
 
@@ -97,4 +95,3 @@ rm -rf "$HOME/.local/share/music-cli"
 ```
 
 `MUSIC_INSTALL_PREFIX`を指定して導入した場合は、その配置先を削除してください。
-旧Python版をuv/pipxで導入していた場合は、Go版の導入後に旧ツールだけを削除してください。

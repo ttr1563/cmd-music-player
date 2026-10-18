@@ -8,6 +8,4 @@ FFmpeg 9.0.2はLGPL v2.1以降です。GPL・nonfree・version3の部品を無�
 `runtime/`以下のFFmpeg実行ファイル・共有ライブラリは、同じABIの変更版へ交換できます。調査・変更に必要なリバースエンジニアリングを制限しません。
 変更版の動作やmacOSの署名状態は利用者側で確認してください。
 
-Python・PyInstaller・PyAV・yt-dlp・DenoはGo版へ同梱しません。
-
 [FFmpegの配布条件](https://ffmpeg.org/legal.html)
