@@ -24,7 +24,7 @@ import (
 	"time"
 )
 
-const version = "0.4.0-dev"
+const version = "0.4.0"
 const sourceURL = "https://ffmpeg.org/releases/ffmpeg-9.0.2.tar.xz"
 const sourceSHA = "8c3850283eb25fa026482078a04051e0be17347b09ef81a0849bec15a96e002e"
 
