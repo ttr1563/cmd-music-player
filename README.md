@@ -1,63 +1,44 @@
 # fest
 
-ターミナルでYouTube Musicを検索・選曲して、音声を再生する非公式プレイヤーです。
+YouTube Musicをターミナルで検索・選曲・再生する非公式プレイヤーです。
 
-**試用版です。Macの実機動作は未確認で、Mac版バイナリは準備中。**
-[ソースから試す手順](docs/source-install.md)を用意しています。
+Mac・Linux・Windowsを対象とし、WindowsではWSLを使いません。
+追加の実行環境の導入は不要です。
 
-以下はバイナリ配布開始後の手順です。
+**実アカウントでのログイン・実機の音声出力は未確認です。署名・公証は行っていません。**
 
-## インストール（Mac）
+## インストール
 
-お使いのMac向けの配布ファイル、同名の`.sha256`、`install.sh`をダウンロードします。
-追加の実行環境をインストールする必要はありません。
-
-| Mac | 配布ファイル |
-| --- | --- |
-| Apple Silicon（M1以降） | `fest-0.3.0-darwin-arm64.tar.gz` |
-| Intel | `fest-0.3.0-darwin-x86_64.tar.gz` |
-
-3つのファイルをダウンロードフォルダに置き、ターミナルで実行します。
-
-Intelの場合: ファイル名の`arm64`を`x86_64`に変更してください。
+[リリース](https://github.com/ttr1563/cmd-music-player/releases/tag/v0.4.0)から、OSに合うアーカイブと同名の`.sha256`をダウンロードします。
+Macでは同じページの`install.sh`もダウンロードし、ターミナルで実行します。
 
 ```console
-sh "$HOME/Downloads/install.sh" "$HOME/Downloads/fest-0.3.0-darwin-arm64.tar.gz"
+cd ~/Downloads
+sh install.sh fest-0.4.0-darwin-arm64.tar.gz
 export PATH="$HOME/.local/bin:$PATH"
 fest
 ```
 
-新しいターミナルで`fest`が見つからない場合は、上の`export PATH=…`を再実行してください。
+Intel Macではファイル名の`arm64`を`x86_64`に置き換えてください。
+LinuxではSHA-256を照合して展開し、`fest`フォルダー内の`./fest`を起動します。
+Windowsの手順は[こちら](docs/windows.md)です。
 
 ## 使い方
 
-- 検索欄に曲名やアーティストを入力し、Enterで検索。
-- 結果を選んでEnterで再生。
-- 画面のボタンで一時停止・次の曲・音量などを操作。
-- Ctrl+Qで終了。再生も停止します。
-
-ウィンドウを最小化しても再生は続きます。
-
-## ログイン・アカウント切り替え
-
-自分のライブラリやプレイリストを使う場合は、ログインします。
-
 ```console
+fest
 fest login personal
 fest account
 ```
 
-[ログイン手順](docs/usage.md#初回ログインとアカウント選択)に従って認証してください。
-認証情報は暗号化して保存し、Keychainは使いません。
+曲名を検索してEnterで再生します。Tabで操作を移動し、画面から一時停止・音量・シーク・キューを操作できます。Ctrl+Qで再生も終了します。
 
-## 更新・削除
+認証情報は暗号化ファイルに保存し、Keychainは使いません。
 
-更新はfestを終了してから、新しい配布ファイルを同じ手順でインストールします。
-設定と認証情報は引き継がれます。
+```console
+fest doctor
+fest config show
+fest purge
+```
 
-保存データを削除するには、festを終了してから`fest purge`を実行します。
-アプリ本体の削除は[アンインストール手順](docs/usage.md#データ削除アンインストール)を参照してください。
-
-困ったときは`fest doctor`で状態を確認できます。
-
-[詳しい使い方](docs/usage.md)
+[詳しい使い方](docs/usage.md) · [ソースからのビルド](docs/source-install.md) · [Windows](docs/windows.md)

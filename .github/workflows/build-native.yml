@@ -1,0 +1,103 @@
+name: Build native preview (explicit label only)
+
+on:
+  pull_request:
+    types: [labeled]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: native-preview-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    if: >-
+      contains(fromJSON('["build-native-preview","build-native-linux","build-native-arm64","build-native-intel","build-native-windows"]'), github.event.label.name) &&
+      github.actor == 'ttr1563' &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      (startsWith(github.event.pull_request.head.ref, 'release/') || github.event.pull_request.head.ref == 'feature/maintenance-go-migration')
+    strategy:
+      max-parallel: 1
+      fail-fast: true
+      matrix:
+        runner: ${{ fromJSON(github.event.label.name == 'build-native-linux' && '["ubuntu-22.04"]' || github.event.label.name == 'build-native-arm64' && '["macos-15"]' || github.event.label.name == 'build-native-intel' && '["macos-15-intel"]' || github.event.label.name == 'build-native-windows' && '["windows-2022"]' || '["ubuntu-22.04", "macos-15", "macos-15-intel", "windows-2022"]') }}
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 20
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      EXPECTED_SHA: ${{ github.event.pull_request.head.sha }}
+      PREVIEW_TAG: native-preview-pr-${{ github.event.pull_request.number }}-${{ github.event.pull_request.head.sha }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - name: Verify public repo and existing draft destination
+        run: |
+          test "$(gh api "repos/$GH_REPO" --jq .visibility)" = public
+          test "$(gh release view "$PREVIEW_TAG" --json isDraft --jq .isDraft)" = true
+          test "$(gh release view "$PREVIEW_TAG" --json targetCommitish --jq .targetCommitish)" = "$EXPECTED_SHA"
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16
+        with:
+          go-version: '1.27.2'
+          cache: false
+      - name: Prepare Windows compiler
+        if: runner.os == 'Windows'
+        shell: pwsh
+        env:
+          GH_TOKEN: ''
+        run: |
+          & C:/msys64/usr/bin/pacman.exe -S --needed --noconfirm make
+          if ($LASTEXITCODE -ne 0) { throw 'MSYS2 make installation failed' }
+          $vswhere = "${env:ProgramFiles(x86)}/Microsoft Visual Studio/Installer/vswhere.exe"
+          $vs = & $vswhere -latest -products '*' -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
+          $devcmd = "$vs/Common7/Tools/VsDevCmd.bat"
+          $allowed = @('PATH','INCLUDE','LIB','LIBPATH','VSINSTALLDIR','VCINSTALLDIR','VCToolsInstallDir','WindowsSdkDir','WindowsSDKVersion','UniversalCRTSdkDir','UCRTVersion','VSCMD_ARG_TGT_ARCH','VSCMD_ARG_HOST_ARCH','Platform')
+          $batch = Join-Path $env:RUNNER_TEMP 'fest-vs-env.cmd'
+          @('@echo off', "call `"$devcmd`" -arch=x64 -host_arch=x64 >nul", 'if errorlevel 1 exit /b 1', 'set') | Set-Content -Encoding ascii $batch
+          $compilerEnv = & cmd.exe /d /c $batch
+          if ($LASTEXITCODE -ne 0) { throw 'Visual C++ environment setup failed' }
+          Remove-Item $batch
+          $compilerEnv | ForEach-Object {
+            $key, $value = $_ -split '=', 2
+            if ($allowed -contains $key) { "$key=$value" >> $env:GITHUB_ENV }
+          }
+      - name: Build and verify Go application
+        env:
+          GH_TOKEN: ''
+          CGO_ENABLED: '0'
+          GOMAXPROCS: '2'
+        run: |
+          if [ "$RUNNER_OS" = Linux ]; then
+            python3 -m unittest discover -s tests -p 'test_mac_installer.py'
+            docker run --rm --cpus 2 --memory 2g --pids-limit 256 \
+              -v "$PWD:/workspace" -v "$(go env GOROOT):/opt/go:ro" \
+              -w /workspace -e CGO_ENABLED=0 -e GOMAXPROCS=2 \
+              quay.io/pypa/manylinux_2_28_x86_64@sha256:4131ddd7acb9c6c966af02fe7e71edc51e078c2d41f475966697676430bfa2ae \
+              /bin/bash -c 'export PATH="/opt/go/bin:$PATH"; git config --global --add safe.directory /workspace; go test -p 1 ./... && go run ./cmd/fest-build'
+          else
+            go test -p 1 ./...
+            if [ "$RUNNER_OS" != Windows ]; then
+              python3 -m unittest discover -s tests -p 'test_mac_installer.py'
+            fi
+            go run ./cmd/fest-build
+          fi
+      - name: Attach to draft only (no Actions artifact storage)
+        run: |
+          test "$(gh release view "$PREVIEW_TAG" --json isDraft --jq .isDraft)" = true
+          test "$(gh release view "$PREVIEW_TAG" --json targetCommitish --jq .targetCommitish)" = "$EXPECTED_SHA"
+          shopt -s nullglob
+          assets=(dist/fest-*/*.tar.gz* dist/fest-*/*.zip* dist/fest-*/*.native.json)
+          test "${#assets[@]}" -eq 5
+          gh release upload "$PREVIEW_TAG" "${assets[@]}"
+          if [ "$RUNNER_ARCH" = ARM64 ]; then
+            gh release upload "$PREVIEW_TAG" scripts/install.sh
+          fi

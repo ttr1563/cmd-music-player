@@ -1,0 +1,88 @@
+name: Open maintenance pull request
+
+on:
+  push:
+    branches: ['feature/maintenance-*', 'release/*']
+
+permissions: {}
+
+concurrency:
+  group: maintenance-pr-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  open-pr:
+    if: >-
+      github.repository == 'ttr1563/cmd-music-player' &&
+      github.event.repository.private == false &&
+      github.actor == 'ttr1563' &&
+      github.event.deleted == false
+    runs-on: ubuntu-24.04
+    timeout-minutes: 1
+    permissions:
+      contents: read
+      pull-requests: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      BRANCH: ${{ github.ref_name }}
+      HEAD_SHA: ${{ github.sha }}
+      REVIEWER: ttr1563
+    steps:
+      - name: Create PR and request human review without executing branch code
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "$BRANCH" =~ ^feature/maintenance-[a-z0-9]+(-[a-z0-9]+)*$ ]]; then
+            BASE=develop
+          elif [[ "$BRANCH" =~ ^release/[0-9]+\.[0-9]+\.[0-9]+(-[a-z0-9]+([.-][a-z0-9]+)*)?$ ]]; then
+            BASE=main
+          else
+            exit 1
+          fi
+          test "$(gh api "repos/$GH_REPO" --jq .private)" = false
+          current=$(gh api "repos/$GH_REPO/git/ref/heads/$BRANCH" --jq .object.sha)
+          if [ "$current" != "$HEAD_SHA" ]; then
+            echo 'A newer push exists; skip this commit.'
+            exit 0
+          fi
+          encoded=$(jq -rn --arg branch "$BRANCH" '$branch | @uri')
+          if [ "$BASE" = main ]; then
+            released=$(gh api "repos/$GH_REPO/compare/main...$encoded" --jq .ahead_by)
+            if [ "$released" -eq 0 ]; then
+              BASE=develop
+            fi
+          fi
+          ahead=$(gh api "repos/$GH_REPO/compare/$BASE...$encoded" --jq .ahead_by)
+          if [ "$ahead" -eq 0 ]; then
+            echo "No commits ahead of $BASE."
+            exit 0
+          fi
+          pulls=$(gh pr list --repo "$GH_REPO" --base "$BASE" --head "$BRANCH" \
+            --state all --limit 100 --json number,state,headRefOid)
+          open=$(jq -r '[.[] | select(.state == "OPEN")][0].number // empty' <<< "$pulls")
+          if [ -n "$open" ]; then
+            echo "PR #$open already exists; leave it for human review."
+            exit 0
+          fi
+          reviewed=$(jq --arg sha "$HEAD_SHA" '[.[] | select(.headRefOid == $sha)] | length' <<< "$pulls")
+          if [ "$reviewed" -gt 0 ]; then
+            echo 'This commit already has a closed PR; do not reopen it.'
+            exit 0
+          fi
+          message=$(gh api "repos/$GH_REPO/commits/$HEAD_SHA" --jq .commit.message)
+          subject=${message%%$'\n'*}
+          description=${message#*$'\n'}
+          description=${description#$'\n'}
+          template=$(gh api "repos/$GH_REPO/contents/.github/PULL_REQUEST_TEMPLATE.md?ref=$HEAD_SHA" \
+            --jq .content | base64 --decode)
+          headings() { sed -n '/^## /p; /^### /p'; }
+          expected=$(headings <<< "$template")
+          if [ -z "$expected" ] || [ "$(headings <<< "$description")" != "$expected" ]; then
+            echo 'Commit body must follow .github/PULL_REQUEST_TEMPLATE.md.' >&2
+            exit 1
+          fi
+          body="$RUNNER_TEMP/maintenance-pr.md"
+          printf '%s\n' "$description" > "$body"
+          gh pr create --repo "$GH_REPO" --base "$BASE" --head "$BRANCH" \
+            --title "[$BRANCH] $subject" --body-file "$body" --reviewer "$REVIEWER"
