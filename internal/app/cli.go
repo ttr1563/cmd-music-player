@@ -23,7 +23,7 @@ import (
 	"golang.org/x/term"
 )
 
-var Version = "0.4.0-dev"
+var Version = "0.4.0"
 
 type console struct {
 	in  *bufio.Reader

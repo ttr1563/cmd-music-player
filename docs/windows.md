@@ -1,15 +1,15 @@
 # Windows版
 
-Windows x64向けのネイティブ版を準備しています。WSLは不要です。
+Windows x64向けのネイティブ版です。WSLは不要です。
 Windows TerminalのPowerShellから起動し、OSの音声出力を使用します。
 ARM版WindowsとWSL内での動作は未検証です。
 
-**バイナリは未配布です。実機でのログイン・音声出力は未確認です。**
-以下は配布開始後の手順です。追加の実行環境は不要です。
+**実アカウントでのログイン・実機の音声出力は未確認です。署名は行っていません。**
+追加の実行環境は不要です。
 
 ## 起動する
 
-リリースからWindows x64版のZIPと同名の`.sha256`をダウンロードします。
+[リリース](https://github.com/ttr1563/cmd-music-player/releases/tag/v0.4.0)からWindows x64版のZIPと同名の`.sha256`をダウンロードします。
 PowerShellで、ファイル名を実際の配布ファイル名に置き換えて実行してください。
 
 ```console
