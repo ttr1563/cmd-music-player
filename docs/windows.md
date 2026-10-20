@@ -1,11 +1,11 @@
 # Windows版
 
 Windows x64向けのネイティブ版を準備しています。WSLは不要です。
-Windows TerminalのPowerShellから起動し、WASAPIで音声を出す設計です。
+Windows TerminalのPowerShellから起動し、OSの音声出力を使用します。
 ARM版WindowsとWSL内での動作は未検証です。
 
-**現在はバイナリ未配布・Windowsでの動作未検証です。**
-以下は配布開始後の手順です。Python・uv・Denoの追加インストールは不要です。
+**バイナリは未配布です。実機でのログイン・音声出力は未確認です。**
+以下は配布開始後の手順です。追加の実行環境は不要です。
 
 ## 起動する
 
@@ -13,23 +13,23 @@ ARM版WindowsとWSL内での動作は未検証です。
 PowerShellで、ファイル名を実際の配布ファイル名に置き換えて実行してください。
 
 ```console
-$archive = "$HOME\Downloads\fest-0.3.0-win32-x86_64.zip"
+$archive = "$HOME\Downloads\fest-0.4.0-win32-x86_64.zip"
 $expected = ((Get-Content -LiteralPath "$archive.sha256" -Raw).Trim() -split '\s+')[0]
 if ((Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash -ine $expected) { throw 'Checksum mismatch' }
-Expand-Archive -LiteralPath $archive -DestinationPath "$HOME\fest-0.3.0"
-& "$HOME\fest-0.3.0\fest\fest.exe" doctor
-& "$HOME\fest-0.3.0\fest\fest.exe"
+Expand-Archive -LiteralPath $archive -DestinationPath "$HOME\fest-0.4.0"
+& "$HOME\fest-0.4.0\fest\fest.exe" doctor
+& "$HOME\fest-0.4.0\fest\fest.exe"
 ```
 
 展開先に同名フォルダーがある場合は、別の空の場所へ展開してください。
-`fest.exe`だけを移動せず、隣の`_internal`も含めてフォルダー全体を保持します。
+`fest.exe`だけを移動せず、隣の`runtime`も含めてフォルダー全体を保持します。
 
 今のPowerShellから`fest`で起動するには、次を実行します。
 新しいターミナルでも使う場合は、Windowsの「環境変数」から同じフォルダーを
 ユーザーのPathに追加してください。
 
 ```console
-$env:Path = "$HOME\fest-0.3.0\fest;$env:Path"
+$env:Path = "$HOME\fest-0.4.0\fest;$env:Path"
 fest
 ```
 

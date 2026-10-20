@@ -1,23 +1,11 @@
-# Bundled software
+# 同梱ライブラリ
 
-This distribution contains Python, PyAV/FFmpeg, miniaudio, yt-dlp, yt-dlp-ejs,
-Deno and other Python dependencies. Package metadata under `_internal` includes
-the upstream license files; Deno's MIT license is in `notices/DENO-LICENSE.txt`.
-`DEPENDENCIES.lock` records the package versions.
-The application license does not replace the licenses of bundled components.
+fest本体はMITライセンスです。Go依存のライセンスとNOTICEは配布物の`notices/go/`に収録します。
 
-Upstream source and build information:
+FFmpeg 9.0.2はLGPL v2.1以降です。GPL・nonfree・version3の部品を無効にした動的リンク構成を使用します。x264・x265は含めません。
+同じリリースの`*.audio-sources.tar.gz`で対応ソースとビルド設定を提供します。FFmpegソースへの変更はありません。
 
-- Python: https://github.com/python/cpython
-- PyInstaller bootloader (GPL with distribution exception): https://pyinstaller.org/en/stable/license.html
-- PyAV and its FFmpeg wheel builds: https://github.com/PyAV-Org/PyAV/tree/v19.0.1
-- FFmpeg (consult the bundled wheel notices for its build license): https://ffmpeg.org/legal.html
-- miniaudio: https://github.com/irmen/pyminiaudio/tree/v1.71
-- yt-dlp: https://github.com/yt-dlp/yt-dlp/tree/2026.08.19
-- yt-dlp-ejs: https://github.com/yt-dlp/ejs/tree/0.8.0
-- Deno: https://github.com/denoland/deno/tree/v2.9.7
+`runtime/`以下のFFmpeg実行ファイル・共有ライブラリは、同じABIの変更版へ交換できます。調査・変更に必要なリバースエンジニアリングを制限しません。
+変更版の動作やmacOSの署名状態は利用者側で確認してください。
 
-Keep this notice and the bundled metadata/licenses when copying the application.
-Before a public binary release, verify the actual collected native-library
-licenses and corresponding source/relinking requirements for that target build.
-No signed/notarized or publicly released binary is produced by the build script.
+[FFmpegの配布条件](https://ffmpeg.org/legal.html)
